@@ -64,8 +64,8 @@ export class SocketHandler {
       });
 
       // === ROOM MANAGEMENT EVENTS ===
-      socket.on('joinRoom', (roomCode: string, playerName: string, password?: string) => {
-        this.handleJoinRoom(socket, roomCode, playerName, password);
+      socket.on('joinRoom', (roomCode: string, playerName: string, password?: string, isSpectator?: boolean) => {
+        this.handleJoinRoom(socket, roomCode, playerName, password, isSpectator);
       });
 
       socket.on('leaveRoom', () => {
@@ -374,12 +374,18 @@ export class SocketHandler {
 
   // === ROOM MANAGEMENT HANDLERS ===
 
-  private handleJoinRoom(socket: Socket, roomCode: string, playerName: string, password?: string): void {
+  private handleJoinRoom(socket: Socket, roomCode: string, playerName: string, password?: string, isSpectator?: boolean): void {
     try {
-      const room = this.roomManager.joinRoomByCode(roomCode, playerName, socket.id, password);
+      const room = this.roomManager.joinRoomByCode(roomCode, playerName, socket.id, password, isSpectator);
       
       socket.data.roomId = room.id;
-      socket.data.playerId = room.players.find(p => p.socketId === socket.id)?.id;
+      
+      // プレイヤーIDを正しく設定（プレイヤーリストと観戦者リストの両方をチェック）
+      const participant = room.players.find(p => p.socketId === socket.id) || 
+                         room.spectators.find(p => p.socketId === socket.id);
+      socket.data.playerId = participant?.id;
+      socket.data.isSpectator = isSpectator || false;
+      
       socket.join(room.id);
 
       // 参加者に最新のルーム状態を送信
@@ -389,19 +395,21 @@ export class SocketHandler {
           code: room.code,
           settings: room.settings,
           players: room.players,
+          spectators: room.spectators,
           status: room.status,
           createdAt: room.createdAt
         }
       });
 
       // 参加通知
+      const joinMessage = isSpectator ? `${playerName}が観戦者として参加しました` : `${playerName}が参加しました`;
       socket.to(room.id).emit('roomMessage', {
         type: 'system',
-        content: `${playerName}が参加しました`,
+        content: joinMessage,
         timestamp: new Date()
       });
 
-      console.log(`Player ${playerName} joined room ${roomCode} via WebSocket`);
+      console.log(`${isSpectator ? 'Spectator' : 'Player'} ${playerName} joined room ${roomCode} via WebSocket`);
     } catch (error) {
       socket.emit('error', error instanceof Error ? error.message : 'Failed to join room');
     }
@@ -421,6 +429,7 @@ export class SocketHandler {
           code: room.code,
           settings: room.settings,
           players: room.players,
+          spectators: room.spectators,
           status: room.status,
           createdAt: room.createdAt
         }
@@ -433,9 +442,15 @@ export class SocketHandler {
   }
 
   private handleSetReady(socket: Socket, isReady: boolean): void {
-    const { roomId, playerId } = socket.data;
+    const { roomId, playerId, isSpectator } = socket.data;
     if (!roomId || !playerId) {
       socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    // 観戦者は準備状態を変更できない
+    if (isSpectator) {
+      socket.emit('error', 'Spectators cannot change ready state');
       return;
     }
 
@@ -447,6 +462,7 @@ export class SocketHandler {
           code: room.code,
           settings: room.settings,
           players: room.players,
+          spectators: room.spectators,
           status: room.status,
           createdAt: room.createdAt
         }
@@ -470,6 +486,7 @@ export class SocketHandler {
             code: room.code,
             settings: room.settings,
             players: room.players,
+            spectators: room.spectators,
             status: room.status,
             createdAt: room.createdAt
           }
@@ -504,6 +521,7 @@ export class SocketHandler {
             code: room.code,
             settings: room.settings,
             players: room.players,
+            spectators: room.spectators,
             status: room.status,
             createdAt: room.createdAt
           }
@@ -584,16 +602,18 @@ export class SocketHandler {
       return;
     }
 
-    const player = room.players.find(p => p.id === playerId);
-    if (!player) {
-      socket.emit('error', 'Player not found in room');
+    // プレイヤーまたは観戦者を探す
+    const participant = room.players.find(p => p.id === playerId) || 
+                       room.spectators.find(p => p.id === playerId);
+    if (!participant) {
+      socket.emit('error', 'Participant not found in room');
       return;
     }
 
     // チャットメッセージを送信
     this.io.to(roomId).emit('roomMessage', {
       type: 'chat',
-      playerName: player.name,
+      playerName: participant.name,
       content,
       timestamp: new Date()
     });

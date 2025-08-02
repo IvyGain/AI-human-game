@@ -117,6 +117,7 @@ app.post('/api/rooms', (req, res) => {
         code: room.code,
         settings: room.settings,
         players: room.players,
+        spectators: room.spectators,
         status: room.status,
         createdAt: room.createdAt
       }
@@ -165,6 +166,7 @@ app.get('/api/rooms/code/:code', (req, res) => {
         code: room.code,
         settings: room.settings,
         players: room.players,
+        spectators: room.spectators,
         status: room.status,
         createdAt: room.createdAt
       }
@@ -178,7 +180,7 @@ app.get('/api/rooms/code/:code', (req, res) => {
 // Join room by code endpoint
 app.post('/api/rooms/join/code', (req, res) => {
   try {
-    const { code, playerName, password } = req.body;
+    const { code, playerName, password, isSpectator = false } = req.body;
     
     if (!code || !playerName) {
       res.status(400).json({ error: 'Code and player name are required' });
@@ -186,7 +188,7 @@ app.post('/api/rooms/join/code', (req, res) => {
     }
 
     // Note: socketId will be handled by WebSocket connection
-    const room = roomManager.joinRoomByCode(code, playerName, '', password);
+    const room = roomManager.joinRoomByCode(code, playerName, '', password, isSpectator);
     
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
@@ -199,6 +201,7 @@ app.post('/api/rooms/join/code', (req, res) => {
         code: room.code,
         settings: room.settings,
         players: room.players,
+        spectators: room.spectators,
         status: room.status,
         createdAt: room.createdAt
       }
@@ -212,7 +215,7 @@ app.post('/api/rooms/join/code', (req, res) => {
 // Join room by ID endpoint
 app.post('/api/rooms/join/:roomId', (req, res) => {
   try {
-    const { playerName, password } = req.body;
+    const { playerName, password, isSpectator = false } = req.body;
     
     if (!playerName) {
       res.status(400).json({ error: 'Player name is required' });
@@ -220,7 +223,7 @@ app.post('/api/rooms/join/:roomId', (req, res) => {
     }
 
     // Note: socketId will be handled by WebSocket connection
-    const room = roomManager.joinRoomById(req.params.roomId, playerName, '', password);
+    const room = roomManager.joinRoomById(req.params.roomId, playerName, '', password, isSpectator);
     
     if (!room) {
       res.status(404).json({ error: 'Room not found' });
@@ -233,6 +236,7 @@ app.post('/api/rooms/join/:roomId', (req, res) => {
         code: room.code,
         settings: room.settings,
         players: room.players,
+        spectators: room.spectators,
         status: room.status,
         createdAt: room.createdAt
       }

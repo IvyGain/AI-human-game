@@ -57,7 +57,7 @@ const CreateRoomPage: React.FC = () => {
     return Object.values(settings.roles).reduce((sum, count) => sum + count, 0);
   };
 
-  const createRoom = () => {
+  const createRoom = async () => {
     if (!playerName.trim()) {
       alert('プレイヤー名を入力してください');
       return;
@@ -73,17 +73,39 @@ const CreateRoomPage: React.FC = () => {
       return;
     }
 
-    // TODO: サーバーにルーム作成リクエストを送信
-    console.log('Creating room with settings:', { playerName, ...settings });
-    
-    // 待機ルームに移動
-    navigate('/waiting-room', { 
-      state: { 
-        roomSettings: settings, 
-        playerName,
-        isHost: true 
-      } 
-    });
+    try {
+      // サーバーにルーム作成リクエストを送信
+      const response = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          settings,
+          playerName
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'ルーム作成に失敗しました');
+      }
+
+      const { room } = await response.json();
+      console.log('Room created:', room);
+      
+      // 待機ルームに移動
+      navigate('/waiting-room', { 
+        state: { 
+          roomData: room,
+          playerName,
+          isHost: true 
+        } 
+      });
+    } catch (error) {
+      console.error('Room creation error:', error);
+      alert(error instanceof Error ? error.message : 'ルーム作成に失敗しました');
+    }
   };
 
   return (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { socketService } from '../services/socket';
 
 interface Player {
   id: string;
@@ -7,6 +8,7 @@ interface Player {
   isReady: boolean;
   isHost: boolean;
   isAI: boolean;
+  isSpectator: boolean;
 }
 
 interface RoomSettings {
@@ -31,116 +33,124 @@ const WaitingRoomPage: React.FC = () => {
   const location = useLocation();
   
   // ルーム設定とプレイヤー情報を取得
-  const { roomSettings, playerName, isHost = false } = location.state as {
-    roomSettings: RoomSettings;
+  const { roomData, playerName, isHost = false, isSpectator = false } = location.state as {
+    roomData: any;
     playerName: string;
     isHost: boolean;
+    isSpectator?: boolean;
   };
 
-  const [players, setPlayers] = useState<Player[]>([
-    {
-      id: '1',
-      name: playerName,
-      isReady: false,
-      isHost: isHost,
-      isAI: false
-    }
-  ]);
+  if (!roomData || !playerName) {
+    navigate('/');
+    return null;
+  }
+
+  const [room, setRoom] = useState(roomData);
+  const [isConnected, setIsConnected] = useState(false);
 
   const [isReady, setIsReady] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{
-    playerName: string;
-    message: string;
+    type: 'chat' | 'system';
+    playerName?: string;
+    content: string;
     timestamp: Date;
-    isSystem?: boolean;
-  }>>([
-    {
-      playerName: 'System',
-      message: `${playerName}がルームに参加しました`,
-      timestamp: new Date(),
-      isSystem: true
-    }
-  ]);
+  }>>([]);
+
+  // WebSocket接続とイベントハンドリング
+  useEffect(() => {
+    const socket = socketService.connect();
+    
+    socket.on('connect', () => {
+      setIsConnected(true);
+      // ルームに参加
+      socket.emit('joinRoom', room.code, playerName, undefined, isSpectator);
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+
+    socket.on('roomUpdate', (data: { room: any }) => {
+      setRoom(data.room);
+      console.log('Room updated:', data.room);
+    });
+
+    socket.on('roomMessage', (message: any) => {
+      setChatHistory(prev => [...prev, {
+        type: message.type,
+        playerName: message.playerName,
+        content: message.content,
+        timestamp: new Date(message.timestamp)
+      }]);
+    });
+
+    socket.on('gameStarted', (data: { gameId: string; gameState: any }) => {
+      console.log('Game started:', data);
+      navigate('/game', {
+        state: {
+          gameId: data.gameId,
+          gameState: data.gameState,
+          playerName
+        }
+      });
+    });
+
+    socket.on('error', (message: string) => {
+      alert(`エラー: ${message}`);
+    });
+
+    return () => {
+      socket.emit('leaveRoom');
+      socketService.disconnect();
+    };
+  }, [room.code, playerName, navigate]);
 
   const getRoomCode = () => {
-    // 実際の実装では、サーバーから取得したルームIDを使用
-    return 'ABC123';
+    return room.code;
   };
 
   const addAIPlayer = () => {
-    if (players.length >= roomSettings.maxPlayers) return;
-    
-    const aiNames = ['ALI-CE', 'BOB-2', 'CHAR-7', 'DATA-9', 'EVE-X', 'FELIX', 'GAMMA'];
-    const usedNames = players.map(p => p.name);
-    const availableNames = aiNames.filter(name => !usedNames.includes(name));
-    
-    if (availableNames.length === 0) return;
-
-    const newAI: Player = {
-      id: `ai-${Date.now()}`,
-      name: availableNames[0],
-      isReady: true,
-      isHost: false,
-      isAI: true
-    };
-
-    setPlayers(prev => [...prev, newAI]);
-    setChatHistory(prev => [...prev, {
-      playerName: 'System',
-      message: `AIプレイヤー ${newAI.name} が参加しました`,
-      timestamp: new Date(),
-      isSystem: true
-    }]);
+    if (!isConnected) return;
+    const socket = socketService.getSocket();
+    socket?.emit('addAIPlayer');
   };
 
   const removeAIPlayer = (playerId: string) => {
-    const player = players.find(p => p.id === playerId);
-    if (!player || !player.isAI) return;
-
-    setPlayers(prev => prev.filter(p => p.id !== playerId));
-    setChatHistory(prev => [...prev, {
-      playerName: 'System',
-      message: `AIプレイヤー ${player.name} が退出しました`,
-      timestamp: new Date(),
-      isSystem: true
-    }]);
+    if (!isConnected) return;
+    const socket = socketService.getSocket();
+    socket?.emit('removeAIPlayer', playerId);
   };
 
   const toggleReady = () => {
-    setIsReady(!isReady);
-    setPlayers(prev => prev.map(p => 
-      p.name === playerName ? { ...p, isReady: !isReady } : p
-    ));
+    if (!isConnected) return;
+    const newReadyState = !isReady;
+    setIsReady(newReadyState);
+    const socket = socketService.getSocket();
+    socket?.emit('setReady', newReadyState);
   };
 
   const sendChatMessage = () => {
-    if (!chatMessage.trim()) return;
-
-    setChatHistory(prev => [...prev, {
-      playerName: playerName,
-      message: chatMessage,
-      timestamp: new Date()
-    }]);
+    if (!chatMessage.trim() || !isConnected) return;
+    
+    const socket = socketService.getSocket();
+    socket?.emit('sendRoomMessage', chatMessage);
     setChatMessage('');
   };
 
   const canStartGame = () => {
-    const readyCount = players.filter(p => p.isReady).length;
-    return players.length >= 5 && readyCount === players.length && players.length === roomSettings.maxPlayers;
+    if (!room || !room.players) return false;
+    const readyCount = room.players.filter((p: any) => p.isReady).length;
+    return room.players.length >= 5 && 
+           readyCount === room.players.length && 
+           room.players.length === room.settings.maxPlayers;
   };
 
   const startGame = () => {
-    if (!canStartGame()) return;
+    if (!canStartGame() || !isConnected) return;
     
-    // TODO: サーバーにゲーム開始リクエストを送信
-    navigate('/game', { 
-      state: { 
-        roomSettings, 
-        players,
-        playerName 
-      } 
-    });
+    const socket = socketService.getSocket();
+    socket?.emit('startRoomGame');
   };
 
   const copyRoomCode = () => {
@@ -155,8 +165,10 @@ const WaitingRoomPage: React.FC = () => {
           {/* ヘッダー */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-white">{roomSettings.roomName}</h1>
-              <p className="text-gray-300">ゲーム開始を待機中...</p>
+              <h1 className="text-2xl font-bold text-white">{room.settings?.roomName || 'ルーム'}</h1>
+              <p className="text-gray-300">
+                {isConnected ? 'ゲーム開始を待機中...' : '接続中...'}
+              </p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="bg-black/50 px-4 py-2 rounded-lg">
@@ -185,9 +197,9 @@ const WaitingRoomPage: React.FC = () => {
               <div className="bg-black/20 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-white">
-                    プレイヤー ({players.length}/{roomSettings.maxPlayers})
+                    プレイヤー ({room.players?.length || 0}/{room.settings?.maxPlayers || 0})
                   </h3>
-                  {isHost && players.length < roomSettings.maxPlayers && (
+                  {isHost && !isSpectator && (room.players?.length || 0) < (room.settings?.maxPlayers || 0) && (
                     <button
                       onClick={addAIPlayer}
                       className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
@@ -198,7 +210,7 @@ const WaitingRoomPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {players.map((player) => (
+                  {(room.players || []).map((player: any) => (
                     <div
                       key={player.id}
                       className={`p-3 rounded-lg border-2 ${
@@ -236,41 +248,76 @@ const WaitingRoomPage: React.FC = () => {
                   ))}
 
                   {/* 空きスロット表示 */}
-                  {Array.from({ length: roomSettings.maxPlayers - players.length }).map((_, index) => (
+                  {Array.from({ length: (room.settings?.maxPlayers || 0) - (room.players?.length || 0) }).map((_, index) => (
                     <div key={`empty-${index}`} className="p-3 rounded-lg border-2 border-dashed border-gray-600 bg-gray-900/20">
                       <div className="text-gray-500 text-center">待機中...</div>
                     </div>
                   ))}
                 </div>
 
-                {/* 準備ボタン */}
-                <div className="mt-6 space-y-3">
-                  <button
-                    onClick={toggleReady}
-                    className={`w-full py-3 rounded-lg font-bold transition-all ${
-                      isReady
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-gray-600 text-white hover:bg-gray-700'
-                    }`}
-                  >
-                    {isReady ? '✅ 準備完了' : '⏳ 準備する'}
-                  </button>
+                {/* 観戦者リスト */}
+                {(room.spectators && room.spectators.length > 0) && (
+                  <div className="mt-6">
+                    <h4 className="text-lg font-semibold text-white mb-3">
+                      観戦者 ({room.spectators.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {room.spectators.map((spectator: any) => (
+                        <div key={spectator.id} className="p-2 rounded-lg bg-purple-900/30 border border-purple-500/50">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-400" />
+                            <span className="text-white font-medium">{spectator.name}</span>
+                            <span className="text-purple-300">👁️</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                  {/* ゲーム開始ボタン（ホストのみ） */}
-                  {isHost && (
+                {/* 準備ボタン（観戦者以外） */}
+                {!isSpectator && (
+                  <div className="mt-6 space-y-3">
                     <button
-                      onClick={startGame}
-                      disabled={!canStartGame()}
+                      onClick={toggleReady}
                       className={`w-full py-3 rounded-lg font-bold transition-all ${
-                        canStartGame()
-                          ? 'bg-blue-600 text-white hover:bg-blue-700 transform hover:scale-105'
-                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        isReady
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-600 text-white hover:bg-gray-700'
                       }`}
                     >
-                      🚀 ゲーム開始
+                      {isReady ? '✅ 準備完了' : '⏳ 準備する'}
                     </button>
-                  )}
-                </div>
+
+                    {/* ゲーム開始ボタン（ホストのみ） */}
+                    {isHost && (
+                      <button
+                        onClick={startGame}
+                        disabled={!canStartGame()}
+                        className={`w-full py-3 rounded-lg font-bold transition-all ${
+                          canStartGame()
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 transform hover:scale-105'
+                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        🚀 ゲーム開始
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* 観戦者用のメッセージ */}
+                {isSpectator && (
+                  <div className="mt-6">
+                    <div className="bg-purple-900/30 border border-purple-500/50 rounded-lg p-4 text-center">
+                      <div className="text-purple-300 mb-2">👁️</div>
+                      <div className="text-white font-semibold">観戦モード</div>
+                      <div className="text-purple-200 text-sm mt-1">
+                        ゲームの進行を観戦できます
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -284,11 +331,17 @@ const WaitingRoomPage: React.FC = () => {
                   {chatHistory.map((chat, index) => (
                     <div key={index} className="mb-2">
                       <div className={`text-sm ${
-                        chat.isSystem 
+                        chat.type === 'system' 
                           ? 'text-yellow-400 italic' 
                           : 'text-gray-300'
                       }`}>
-                        <span className="font-semibold">{chat.playerName}:</span> {chat.message}
+                        {chat.type === 'system' ? (
+                          <span>{chat.content}</span>
+                        ) : (
+                          <>
+                            <span className="font-semibold">{chat.playerName}:</span> {chat.content}
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -320,20 +373,20 @@ const WaitingRoomPage: React.FC = () => {
                   <div>
                     <h4 className="font-semibold text-white mb-2">時間設定</h4>
                     <div className="space-y-1 text-sm text-gray-300">
-                      <div>夜フェーズ: {roomSettings.nightDuration}秒</div>
-                      <div>昼フェーズ: {roomSettings.dayDuration}秒</div>
-                      <div>投票フェーズ: {roomSettings.voteDuration}秒</div>
+                      <div>夜フェーズ: {room.settings?.nightDuration || 180}秒</div>
+                      <div>昼フェーズ: {room.settings?.dayDuration || 300}秒</div>
+                      <div>投票フェーズ: {room.settings?.voteDuration || 90}秒</div>
                     </div>
                   </div>
                   
                   <div>
                     <h4 className="font-semibold text-white mb-2">役職配分</h4>
                     <div className="space-y-1 text-sm text-gray-300">
-                      <div>🤖 AI: {roomSettings.roles.ai}人</div>
-                      <div>🔍 エンジニア: {roomSettings.roles.engineer}人</div>
-                      <div>🛡️ サイバーガード: {roomSettings.roles.cyberGuard}人</div>
-                      <div>👤 市民: {roomSettings.roles.citizen}人</div>
-                      <div>🎭 トリックスター: {roomSettings.roles.trickster}人</div>
+                      <div>🤖 AI: {room.settings?.roles?.ai || 0}人</div>
+                      <div>🔍 エンジニア: {room.settings?.roles?.engineer || 0}人</div>
+                      <div>🛡️ サイバーガード: {room.settings?.roles?.cyberGuard || 0}人</div>
+                      <div>👤 市民: {room.settings?.roles?.citizen || 0}人</div>
+                      <div>🎭 トリックスター: {room.settings?.roles?.trickster || 0}人</div>
                     </div>
                   </div>
                 </div>

@@ -68,3 +68,136 @@
 [1]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
 [0] Client connected: 39pacp20iVCTxBYSAAAN
 [0] Client disconnected: jgmTfcT8hwZzg3dMAAAK
+[0] 15:39:14 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: 1gpkESPDpLeQIuGUAAAB
+[0] 15:39:19 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: ghYzpGQVz4iY5uGJAAAB
+[0] 15:39:25 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: lG6W7eiJyBu6aknbAAAB
+[0] 15:39:47 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: 1hy0Wx2pLCLUqAi1AAAB
+[0] 15:39:52 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: B6K1Pr1NyzT5kmSyAAAB
+[0] 15:40:05 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: vVrONq4L24aIDG8yAAAB
+[0] 15:40:15 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: AWZVdI9phE4l32TEAAAB
+[0] 15:40:47 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: H-ReD87Yot1CeCw5AAAB
+[0] Client disconnected: H-ReD87Yot1CeCw5AAAB
+[1] 19:58:08 [vite] hmr update /src/pages/CreateRoomPage.tsx, /src/index.css
+[1] 19:58:20 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 19:58:34 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 19:58:48 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 19:58:56 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 19:59:02 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 19:59:10 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 19:59:17 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 19:59:28 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 19:59:47 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:00:05 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:00:17 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:00:22 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:00:34 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:00:46 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:01:02 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[0] 20:06:17 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:06:24 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:06:33 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:06:40 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:06:48 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:07:00 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:07:07 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:07:14 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:08:54 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:01 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:08 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:16 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:38 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:47 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:53 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:09:58 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:09 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:21 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:28 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:38 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:49 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:10:56 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] 20:11:01 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[1] 20:11:07 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:13 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:13 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:17 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:24 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:45 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:11:59 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[1] 20:12:12 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:12:21 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:12:26 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:12:36 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:12:40 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:12:50 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:13:01 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 20:13:17 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css

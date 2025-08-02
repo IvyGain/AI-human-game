@@ -17,40 +17,33 @@ const JoinRoomPage: React.FC = () => {
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSpectator, setIsSpectator] = useState(false);
 
-  // モックデータ - 実際の実装ではサーバーから取得
-  const [availableRooms] = useState<Room[]>([
-    {
-      id: '1',
-      name: '初心者歓迎ルーム',
-      hostName: 'ホスト太郎',
-      players: 4,
-      maxPlayers: 8,
-      isPrivate: false,
-      gameMode: 'スタンダード',
-      created: new Date(Date.now() - 300000) // 5分前
-    },
-    {
-      id: '2',
-      name: '上級者向け高速戦',
-      hostName: 'ゲーマー花子',
-      players: 6,
-      maxPlayers: 10,
-      isPrivate: false,
-      gameMode: '高速',
-      created: new Date(Date.now() - 600000) // 10分前
-    },
-    {
-      id: '3',
-      name: 'フレンド限定',
-      hostName: 'プライベート主',
-      players: 3,
-      maxPlayers: 6,
-      isPrivate: true,
-      gameMode: 'カスタム',
-      created: new Date(Date.now() - 120000) // 2分前
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 公開ルーム一覧を取得
+  const fetchPublicRooms = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/rooms/public');
+      if (response.ok) {
+        const { rooms } = await response.json();
+        setAvailableRooms(rooms);
+      } else {
+        console.error('Failed to fetch public rooms');
+      }
+    } catch (error) {
+      console.error('Fetch public rooms error:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
+
+  // 初回ロード時に公開ルーム一覧を取得
+  React.useEffect(() => {
+    fetchPublicRooms();
+  }, []);
 
   const filteredRooms = availableRooms.filter(room => 
     !searchQuery || 
@@ -58,7 +51,7 @@ const JoinRoomPage: React.FC = () => {
     room.hostName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const joinRoomByCode = () => {
+  const joinRoomByCode = async () => {
     if (!playerName.trim()) {
       alert('プレイヤー名を入力してください');
       return;
@@ -69,81 +62,94 @@ const JoinRoomPage: React.FC = () => {
       return;
     }
 
-    // TODO: サーバーにルーム参加リクエストを送信
-    console.log('Joining room with code:', roomCode);
-    
-    // モック用の設定
-    const mockRoomSettings = {
-      roomName: 'コード参加ルーム',
-      maxPlayers: 8,
-      password: '',
-      isPrivate: true,
-      nightDuration: 180,
-      dayDuration: 300,
-      voteDuration: 90,
-      roles: {
-        ai: 2,
-        engineer: 1,
-        cyberGuard: 1,
-        citizen: 3,
-        trickster: 1
-      }
-    };
+    try {
+      // サーバーにルーム参加リクエストを送信
+      const response = await fetch('/api/rooms/join/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: roomCode,
+          playerName,
+          isSpectator
+        })
+      });
 
-    navigate('/waiting-room', {
-      state: {
-        roomSettings: mockRoomSettings,
-        playerName,
-        isHost: false
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'ルーム参加に失敗しました');
       }
-    });
+
+      const { room } = await response.json();
+      console.log('Joined room:', room);
+
+      navigate('/waiting-room', {
+        state: {
+          roomData: room,
+          playerName,
+          isSpectator,
+          isHost: false
+        }
+      });
+    } catch (error) {
+      console.error('Join room error:', error);
+      alert(error instanceof Error ? error.message : 'ルーム参加に失敗しました');
+    }
   };
 
-  const joinRoom = (room: Room) => {
+  const joinRoom = async (room: Room) => {
     if (!playerName.trim()) {
       alert('プレイヤー名を入力してください');
       return;
     }
 
-    if (room.players >= room.maxPlayers) {
+    if (!isSpectator && room.players >= room.maxPlayers) {
       alert('このルームは満室です');
       return;
     }
 
+    let password = '';
     if (room.isPrivate) {
-      const password = prompt('パスワードを入力してください:');
-      if (!password) return;
-      // TODO: パスワード認証
+      const inputPassword = prompt('パスワードを入力してください:');
+      if (!inputPassword) return;
+      password = inputPassword;
     }
 
-    // TODO: サーバーにルーム参加リクエストを送信
-    console.log('Joining room:', room.id);
+    try {
+      // サーバーにルーム参加リクエストを送信
+      const response = await fetch(`/api/rooms/join/${room.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          playerName,
+          password,
+          isSpectator
+        })
+      });
 
-    // モック用の設定
-    const mockRoomSettings = {
-      roomName: room.name,
-      maxPlayers: room.maxPlayers,
-      password: '',
-      isPrivate: room.isPrivate,
-      nightDuration: 180,
-      dayDuration: 300,
-      voteDuration: 90,
-      roles: {
-        ai: 2,
-        engineer: 1,
-        cyberGuard: 1,
-        citizen: room.maxPlayers - 5,
-        trickster: 1
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'ルーム参加に失敗しました');
       }
-    };
 
-    navigate('/waiting-room', {
-      state: {
-        roomSettings: mockRoomSettings,
-        playerName,
-        isHost: false
-      }
-    });
+      const { room: joinedRoom } = await response.json();
+      console.log('Joined room:', joinedRoom);
+
+      navigate('/waiting-room', {
+        state: {
+          roomData: joinedRoom,
+          playerName,
+          isSpectator,
+          isHost: false
+        }
+      });
+    } catch (error) {
+      console.error('Join room error:', error);
+      alert(error instanceof Error ? error.message : 'ルーム参加に失敗しました');
+    }
   };
 
   const getTimeAgo = (date: Date) => {
@@ -188,6 +194,24 @@ const JoinRoomPage: React.FC = () => {
                     maxLength={20}
                   />
                 </div>
+                
+                {/* 観戦者オプション */}
+                <div className="mt-4">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isSpectator}
+                      onChange={(e) => setIsSpectator(e.target.checked)}
+                      className="w-4 h-4 text-purple-600 bg-black/50 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                    />
+                    <div>
+                      <span className="text-white font-medium">観戦者として参加</span>
+                      <div className="text-sm text-gray-300">
+                        ゲームに参加せず、観戦のみを行います
+                      </div>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {/* ルームコード参加 */}
@@ -227,11 +251,12 @@ const JoinRoomPage: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-white">🌐 公開ルーム一覧</h3>
                 <button
-                  onClick={() => window.location.reload()}
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  onClick={fetchPublicRooms}
+                  disabled={isLoading}
+                  className="text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
                   title="更新"
                 >
-                  🔄
+                  {isLoading ? '⏳' : '🔄'}
                 </button>
               </div>
 
@@ -276,14 +301,21 @@ const JoinRoomPage: React.FC = () => {
 
                     <button
                       onClick={() => joinRoom(room)}
-                      disabled={!playerName.trim() || room.players >= room.maxPlayers}
+                      disabled={!playerName.trim() || (!isSpectator && room.players >= room.maxPlayers)}
                       className={`w-full py-2 rounded font-semibold transition-all ${
-                        !playerName.trim() || room.players >= room.maxPlayers
+                        !playerName.trim() || (!isSpectator && room.players >= room.maxPlayers)
                           ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          : isSpectator
+                          ? 'bg-purple-600 text-white hover:bg-purple-700'
                           : 'bg-blue-600 text-white hover:bg-blue-700'
                       }`}
                     >
-                      {room.players >= room.maxPlayers ? '満室' : '参加'}
+                      {(!isSpectator && room.players >= room.maxPlayers) 
+                        ? '満室' 
+                        : isSpectator 
+                        ? '観戦参加' 
+                        : '参加'
+                      }
                     </button>
                   </div>
                 ))}

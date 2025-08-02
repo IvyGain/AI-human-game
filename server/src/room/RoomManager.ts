@@ -23,6 +23,7 @@ export interface RoomPlayer {
   isReady: boolean;
   isHost: boolean;
   isAI: boolean;
+  isSpectator: boolean;
   socketId: string;
 }
 
@@ -31,6 +32,7 @@ export interface Room {
   code: string;
   settings: RoomSettings;
   players: RoomPlayer[];
+  spectators: RoomPlayer[];
   status: 'waiting' | 'playing' | 'finished';
   createdAt: Date;
   hostId: string;
@@ -73,6 +75,7 @@ export class RoomManager {
       isReady: false,
       isHost: true,
       isAI: false,
+      isSpectator: false,
       socketId: hostSocketId
     };
 
@@ -81,6 +84,7 @@ export class RoomManager {
       code: roomCode,
       settings,
       players: [hostPlayer],
+      spectators: [],
       status: 'waiting',
       createdAt: new Date(),
       hostId
@@ -96,18 +100,20 @@ export class RoomManager {
   /**
    * ルーム参加（コード指定）
    */
-  joinRoomByCode(code: string, playerName: string, socketId: string, password?: string): Room | null {
+  joinRoomByCode(code: string, playerName: string, socketId: string, password?: string, isSpectator: boolean = false): Room | null {
     const room = Array.from(this.rooms.values()).find(r => r.code === code);
     
     if (!room) {
       throw new Error('ルームが見つかりません');
     }
 
-    if (room.status !== 'waiting') {
+    // 観戦者の場合はゲーム中でも参加可能
+    if (!isSpectator && room.status !== 'waiting') {
       throw new Error('このルームは既にゲーム中です');
     }
 
-    if (room.players.length >= room.settings.maxPlayers) {
+    // 観戦者でない場合のみ人数制限チェック
+    if (!isSpectator && room.players.length >= room.settings.maxPlayers) {
       throw new Error('ルームが満室です');
     }
 
@@ -115,39 +121,46 @@ export class RoomManager {
       throw new Error('パスワードが間違っています');
     }
 
-    // 同名プレイヤーのチェック
-    if (room.players.some(p => p.name === playerName)) {
+    // 同名チェック（プレイヤーと観戦者の両方）
+    const allParticipants = [...room.players, ...room.spectators];
+    if (allParticipants.some(p => p.name === playerName)) {
       throw new Error('同じ名前のプレイヤーが既に参加しています');
     }
 
     const playerId = uuidv4();
-    const newPlayer: RoomPlayer = {
+    const newParticipant: RoomPlayer = {
       id: playerId,
       name: playerName,
-      isReady: false,
+      isReady: isSpectator ? true : false, // 観戦者は常に準備完了
       isHost: false,
       isAI: false,
+      isSpectator,
       socketId
     };
 
-    room.players.push(newPlayer);
+    if (isSpectator) {
+      room.spectators.push(newParticipant);
+      console.log(`Spectator ${playerName} joined room ${code}`);
+    } else {
+      room.players.push(newParticipant);
+      console.log(`Player ${playerName} joined room ${code}`);
+    }
+    
     this.playerRooms.set(playerId, room.id);
-
-    console.log(`Player ${playerName} joined room ${code}`);
     return room;
   }
 
   /**
    * ルーム参加（ID指定）
    */
-  joinRoomById(roomId: string, playerName: string, socketId: string, password?: string): Room | null {
+  joinRoomById(roomId: string, playerName: string, socketId: string, password?: string, isSpectator: boolean = false): Room | null {
     const room = this.rooms.get(roomId);
     
     if (!room) {
       throw new Error('ルームが見つかりません');
     }
 
-    return this.joinRoomByCode(room.code, playerName, socketId, password);
+    return this.joinRoomByCode(room.code, playerName, socketId, password, isSpectator);
   }
 
   /**
@@ -198,6 +211,7 @@ export class RoomManager {
       isReady: true,
       isHost: false,
       isAI: true,
+      isSpectator: false,
       socketId: ''
     };
 
@@ -240,33 +254,46 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return null;
 
+    // プレイヤーリストから探す
     const playerIndex = room.players.findIndex(p => p.id === playerId);
-    if (playerIndex === -1) return null;
+    if (playerIndex !== -1) {
+      const leavingPlayer = room.players[playerIndex];
+      room.players.splice(playerIndex, 1);
+      this.playerRooms.delete(playerId);
 
-    const leavingPlayer = room.players[playerIndex];
-    room.players.splice(playerIndex, 1);
-    this.playerRooms.delete(playerId);
+      // ホストが退出した場合の処理
+      if (leavingPlayer.isHost && room.players.length > 0) {
+        // 最初の人間プレイヤーを新しいホストにする
+        const newHost = room.players.find(p => !p.isAI);
+        if (newHost) {
+          newHost.isHost = true;
+          room.hostId = newHost.id;
+          console.log(`${newHost.name} is now the host of room ${room.code}`);
+        }
+      }
 
-    // ホストが退出した場合の処理
-    if (leavingPlayer.isHost && room.players.length > 0) {
-      // 最初の人間プレイヤーを新しいホストにする
-      const newHost = room.players.find(p => !p.isAI);
-      if (newHost) {
-        newHost.isHost = true;
-        room.hostId = newHost.id;
-        console.log(`${newHost.name} is now the host of room ${room.code}`);
+      console.log(`Player ${leavingPlayer.name} left room ${room.code}`);
+    } else {
+      // 観戦者リストから探す
+      const spectatorIndex = room.spectators.findIndex(p => p.id === playerId);
+      if (spectatorIndex !== -1) {
+        const leavingSpectator = room.spectators[spectatorIndex];
+        room.spectators.splice(spectatorIndex, 1);
+        this.playerRooms.delete(playerId);
+        console.log(`Spectator ${leavingSpectator.name} left room ${room.code}`);
+      } else {
+        return null;
       }
     }
 
-    // ルームが空になった場合は削除
-    if (room.players.length === 0) {
+    // ルームが完全に空になった場合は削除（プレイヤーも観戦者もいない）
+    if (room.players.length === 0 && room.spectators.length === 0) {
       this.rooms.delete(roomId);
       this.roomCodes.delete(room.code);
       console.log(`Room ${room.code} deleted (empty)`);
       return null;
     }
 
-    console.log(`Player ${leavingPlayer.name} left room ${room.code}`);
     return room;
   }
 
@@ -277,9 +304,16 @@ export class RoomManager {
     for (const [playerId, roomId] of this.playerRooms.entries()) {
       const room = this.rooms.get(roomId);
       if (room) {
+        // プレイヤーリストから探す
         const player = room.players.find(p => p.socketId === socketId);
         if (player) {
           return this.leaveRoom(player.id);
+        }
+        
+        // 観戦者リストからも探す
+        const spectator = room.spectators.find(p => p.socketId === socketId);
+        if (spectator) {
+          return this.leaveRoom(spectator.id);
         }
       }
     }
@@ -313,8 +347,15 @@ export class RoomManager {
    */
   getPlayerRoomBySocketId(socketId: string): Room | null {
     for (const room of this.rooms.values()) {
+      // プレイヤーリストから探す
       const player = room.players.find(p => p.socketId === socketId);
       if (player) {
+        return room;
+      }
+      
+      // 観戦者リストからも探す
+      const spectator = room.spectators.find(p => p.socketId === socketId);
+      if (spectator) {
         return room;
       }
     }
@@ -396,12 +437,14 @@ export class RoomManager {
     const waitingRooms = Array.from(this.rooms.values()).filter(r => r.status === 'waiting').length;
     const playingRooms = Array.from(this.rooms.values()).filter(r => r.status === 'playing').length;
     const totalPlayers = Array.from(this.rooms.values()).reduce((sum, room) => sum + room.players.length, 0);
+    const totalSpectators = Array.from(this.rooms.values()).reduce((sum, room) => sum + room.spectators.length, 0);
 
     return {
       totalRooms,
       waitingRooms,
       playingRooms,
-      totalPlayers
+      totalPlayers,
+      totalSpectators
     };
   }
 }
