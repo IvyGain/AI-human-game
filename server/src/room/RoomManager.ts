@@ -121,6 +121,14 @@ export class RoomManager {
       throw new Error('パスワードが間違っています');
     }
 
+    // 既存プレイヤーがホストで同じ名前かつsocketIdが空の場合は、socketIdを更新
+    const existingHost = room.players.find(p => p.name === playerName && p.isHost && p.socketId === '');
+    if (existingHost) {
+      existingHost.socketId = socketId;
+      console.log(`Host ${playerName} reconnected to room ${code} with socketId ${socketId}`);
+      return room;
+    }
+
     // 同名チェック（プレイヤーと観戦者の両方）
     const allParticipants = [...room.players, ...room.spectators];
     if (allParticipants.some(p => p.name === playerName)) {

@@ -97,7 +97,15 @@ const WaitingRoomPage: React.FC = () => {
     });
 
     socket.on('error', (message: string) => {
-      alert(`エラー: ${message}`);
+      console.error('WebSocketエラー:', message);
+      
+      // ルームが見つからない場合は、メニューに戻る
+      if (message.includes('ルームが見つかりません') || message.includes('Room not found')) {
+        alert(`エラー: ${message}\n\nメニューに戻ります。`);
+        navigate('/');
+      } else {
+        alert(`エラー: ${message}`);
+      }
     });
 
     return () => {
@@ -111,7 +119,11 @@ const WaitingRoomPage: React.FC = () => {
   };
 
   const addAIPlayer = () => {
-    if (!isConnected) return;
+    if (!isConnected) {
+      console.log('AI追加失敗: WebSocket未接続');
+      return;
+    }
+    console.log('AI追加要求を送信中...');
     const socket = socketService.getSocket();
     socket?.emit('addAIPlayer');
   };

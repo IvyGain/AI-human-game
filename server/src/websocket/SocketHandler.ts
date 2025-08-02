@@ -376,6 +376,7 @@ export class SocketHandler {
 
   private handleJoinRoom(socket: Socket, roomCode: string, playerName: string, password?: string, isSpectator?: boolean): void {
     try {
+      console.log(`ルーム参加リクエスト - コード: ${roomCode}, プレイヤー名: ${playerName}, 観戦者: ${isSpectator}`);
       const room = this.roomManager.joinRoomByCode(roomCode, playerName, socket.id, password, isSpectator);
       
       socket.data.roomId = room.id;
@@ -385,6 +386,8 @@ export class SocketHandler {
                          room.spectators.find(p => p.socketId === socket.id);
       socket.data.playerId = participant?.id;
       socket.data.isSpectator = isSpectator || false;
+      
+      console.log(`ルーム参加成功 - roomId: ${socket.data.roomId}, playerId: ${socket.data.playerId}, isSpectator: ${socket.data.isSpectator}`);
       
       socket.join(room.id);
 
@@ -411,6 +414,7 @@ export class SocketHandler {
 
       console.log(`${isSpectator ? 'Spectator' : 'Player'} ${playerName} joined room ${roomCode} via WebSocket`);
     } catch (error) {
+      console.error(`ルーム参加エラー:`, error);
       socket.emit('error', error instanceof Error ? error.message : 'Failed to join room');
     }
   }
@@ -471,13 +475,24 @@ export class SocketHandler {
   }
 
   private handleAddAIPlayer(socket: Socket): void {
-    const { roomId, playerId } = socket.data;
+    const { roomId, playerId, isSpectator } = socket.data;
+    console.log(`AI追加リクエスト - roomId: ${roomId}, playerId: ${playerId}, isSpectator: ${isSpectator}`);
+    
     if (!roomId || !playerId) {
+      console.log('AI追加失敗: ルームまたはプレイヤーIDがありません');
       socket.emit('error', 'Not in a room');
       return;
     }
 
+    // 観戦者はAIを追加できない
+    if (isSpectator) {
+      console.log('AI追加失敗: 観戦者はAIを追加できません');
+      socket.emit('error', 'Spectators cannot add AI players');
+      return;
+    }
+
     try {
+      console.log(`AIプレイヤー追加試行中...`);
       const room = this.roomManager.addAIPlayer(roomId, playerId);
       if (room) {
         this.io.to(room.id).emit('roomUpdate', {

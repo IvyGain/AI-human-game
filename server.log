@@ -247,3 +247,53 @@
 [1] 2:03:41 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
 [1] 2:03:41 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
 [1] 2:03:50 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[0] Room created: Z14AO2 (960cc44e-69fd-4a0a-b1f1-b2831d5fa6c3)
+[0] Client connected: r3OjDgDxuk3oqMjOAAAD
+[0] 2:09:07 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: BeQKVOG3Y8XCi0MbAAAB
+[1] 2:09:13 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[0] Client disconnected: BeQKVOG3Y8XCi0MbAAAB
+[0] Client connected: WSdplfwsFykVBH8bAAAD
+[0] AI追加リクエスト - roomId: undefined, playerId: undefined, isSpectator: undefined
+[0] AI追加失敗: ルームまたはプレイヤーIDがありません
+[0] AI追加リクエスト - roomId: undefined, playerId: undefined, isSpectator: undefined
+[0] AI追加失敗: ルームまたはプレイヤーIDがありません
+[1] 2:09:19 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[0] Client disconnected: WSdplfwsFykVBH8bAAAD
+[0] Client connected: tAUqBRkICkx_Kxb_AAAF
+[0] 2:09:36 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: A4eWPQlUrf3Vcrk_AAAB
+[0] ルーム参加リクエスト - コード: Z14AO2, プレイヤー名: あ, 観戦者: false
+[0] 2:10:10 [tsx] change in ./src/websocket/SocketHandler.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: d5E0KIbBSLmy_R9oAAAB
+[0] ルーム参加リクエスト - コード: Z14AO2, プレイヤー名: あ, 観戦者: false
+[0] ルーム参加エラー: Error: ルームが見つかりません
+[0]     at RoomManager.joinRoomByCode (/Users/mashimaro/AI-human-game/server/src/room/RoomManager.ts:107:13)
+[0]     at SocketHandler.handleJoinRoom (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:380:37)
+[0]     at Socket.<anonymous> (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:68:14)
+[0]     at Socket.emit (node:events:518:28)
+[0]     at Socket.emitUntyped (/Users/mashimaro/AI-human-game/node_modules/socket.io/dist/typed-events.js:69:22)
+[0]     at /Users/mashimaro/AI-human-game/node_modules/socket.io/dist/socket.js:697:39
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+[1] 2:10:26 [vite] hmr update /src/pages/WaitingRoomPage.tsx, /src/index.css
+[0] Client disconnected: d5E0KIbBSLmy_R9oAAAB
+[0] Client connected: ziZLhMJ5D_spRDeEAAAD
+[0] ルーム参加リクエスト - コード: Z14AO2, プレイヤー名: あ, 観戦者: false
+[0] ルーム参加エラー: Error: ルームが見つかりません
+[0]     at RoomManager.joinRoomByCode (/Users/mashimaro/AI-human-game/server/src/room/RoomManager.ts:107:13)
+[0]     at SocketHandler.handleJoinRoom (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:380:37)
+[0]     at Socket.<anonymous> (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:68:14)
+[0]     at Socket.emit (node:events:518:28)
+[0]     at Socket.emitUntyped (/Users/mashimaro/AI-human-game/node_modules/socket.io/dist/typed-events.js:69:22)
+[0]     at /Users/mashimaro/AI-human-game/node_modules/socket.io/dist/socket.js:697:39
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+[0] Client disconnected: ziZLhMJ5D_spRDeEAAAD
+[0] 2:10:46 [tsx] change in ./src/room/RoomManager.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
