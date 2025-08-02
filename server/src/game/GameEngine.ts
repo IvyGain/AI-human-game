@@ -5,17 +5,25 @@ import {
   NightAction, 
   VotingResult,
   Faction,
-  RoleName
+  RoleName,
+  ChatMessage
 } from '@project-jin/shared';
 import { ROLES, GAME_CONFIG } from '@project-jin/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { AIPlayerManager } from '../ai/AIPlayerManager.js';
+import { DatabaseService } from '../database/DatabaseService.js';
+import { GlickoRating } from '../rating/GlickoRating.js';
 
 export class GameEngine {
   private gameState: GameState;
   private phaseTimer: NodeJS.Timeout | null = null;
   private phaseCallbacks: Map<GamePhase, () => void> = new Map();
+  private aiPlayerManager: AIPlayerManager = new AIPlayerManager();
+  private chatHistory: ChatMessage[] = [];
+  private dbService: DatabaseService;
+  private ratingSystem: GlickoRating = new GlickoRating();
 
-  constructor(gameId: string) {
+  constructor(gameId: string, dbService?: DatabaseService) {
     this.gameState = {
       id: gameId,
       phase: 'night',
@@ -27,6 +35,7 @@ export class GameEngine {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    this.dbService = dbService || new DatabaseService();
   }
 
   addPlayer(name: string, isBot: boolean = false): Player {
@@ -57,6 +66,7 @@ export class GameEngine {
     }
 
     this.assignRoles();
+    this.initializeAIPlayers();
     this.gameState.phase = 'night';
     this.gameState.turn = 1;
     this.startPhaseTimer();
@@ -278,9 +288,276 @@ export class GameEngine {
     return target.role?.name === 'ai' ? 'AI' : 'Not AI';
   }
 
+  /**
+   * AIプレイヤー関連のメソッド
+   */
+  addBotPlayers(count: number): Player[] {
+    const botPlayers: Player[] = [];
+    const botNames = [
+      'アリス', 'ボブ', 'チャーリー', 'ダイアナ', 'イヴ', 
+      'フランク', 'グレース', 'ヘンリー', 'アイビー', 'ジャック'
+    ];
+
+    for (let i = 0; i < count && i < botNames.length; i++) {
+      const botPlayer = this.addPlayer(`AI-${botNames[i]}`, true);
+      botPlayers.push(botPlayer);
+    }
+
+    return botPlayers;
+  }
+
+  initializeAIPlayers(): void {
+    const botPlayers = this.gameState.players.filter(p => p.isBot);
+    for (const player of botPlayers) {
+      this.aiPlayerManager.initializeAIPlayer(player);
+    }
+  }
+
+  async executeAINightActions(): Promise<void> {
+    const aiActions = await this.aiPlayerManager.executeNightActions(this.gameState);
+    
+    for (const action of aiActions) {
+      this.executeNightAction({
+        playerId: action.playerId,
+        targetId: action.targetId,
+        actionType: action.actionType as 'investigate' | 'protect' | 'attack',
+        turn: this.gameState.turn
+      });
+    }
+  }
+
+  async executeAIVoting(): Promise<void> {
+    const aiVotes = await this.aiPlayerManager.executeVoting(this.gameState);
+    
+    for (const vote of aiVotes) {
+      this.castVote(vote.playerId, vote.targetId);
+    }
+  }
+
+  async addChatMessage(playerId: string, content: string): Promise<ChatMessage> {
+    const message: ChatMessage = {
+      id: uuidv4(),
+      playerId,
+      content,
+      timestamp: new Date(),
+      phase: this.gameState.phase,
+      turn: this.gameState.turn
+    };
+
+    this.chatHistory.push(message);
+    
+    // AIプレイヤーに学習させる
+    this.aiPlayerManager.processChatMessage(message, this.gameState);
+
+    // データベースに保存
+    if (this.dbService) {
+      try {
+        const player = this.getPlayer(playerId);
+        await this.dbService.saveChatMessage(
+          this.gameState.id,
+          content,
+          this.gameState.phase.toUpperCase() as any,
+          this.gameState.turn,
+          player?.isBot ? undefined : playerId,
+          player?.name,
+          playerId === 'system'
+        );
+      } catch (error) {
+        console.error('Failed to save chat message:', error);
+      }
+    }
+
+    return message;
+  }
+
+  startAIDiscussion(onAIMessage: (playerId: string, message: string) => void): void {
+    if (this.gameState.phase === 'day_discussion') {
+      this.aiPlayerManager.startDiscussionPhase(this.gameState, (playerId, message) => {
+        const aiMessage = this.addChatMessage(playerId, message);
+        onAIMessage(playerId, message);
+      });
+    }
+  }
+
+  stopAIDiscussion(): void {
+    this.aiPlayerManager.stopDiscussionPhase();
+  }
+
+  getChatHistory(): ChatMessage[] {
+    return [...this.chatHistory];
+  }
+
+  getRecentChatMessages(limit: number = 10): ChatMessage[] {
+    return this.chatHistory.slice(-limit);
+  }
+
+  async finishGame(winner: Faction): Promise<void> {
+    this.gameState.winner = winner;
+    this.gameState.isFinished = true;
+    this.gameState.updatedAt = new Date();
+
+    // データベースにゲーム結果を保存
+    if (this.dbService) {
+      try {
+        await this.dbService.finishGame(this.gameState.id, winner);
+        
+        // レーティング更新
+        await this.updatePlayerRatings(winner);
+        
+        // リプレイデータ保存
+        await this.saveGameReplay();
+        
+        // 統計情報更新
+        await this.updateGameStats(winner);
+      } catch (error) {
+        console.error('Failed to save game data:', error);
+      }
+    }
+  }
+
+  private async updatePlayerRatings(winner: Faction): Promise<void> {
+    const humanPlayers = this.gameState.players.filter(p => !p.isBot);
+    if (humanPlayers.length < 2) return;
+
+    // プレイヤーの現在のレーティング情報を取得
+    const playerRatings = await Promise.all(
+      humanPlayers.map(async (player) => {
+        const user = await this.dbService.getUserByName(player.name);
+        return {
+          player,
+          user,
+          rating: user?.rating || 1000,
+          deviation: user?.ratingDeviation || 350,
+          volatility: user?.volatility || 0.06
+        };
+      })
+    );
+
+    // 順位を計算（勝利陣営が上位）
+    const gameResults = playerRatings.map(({ player }) => {
+      if (player.role?.faction === winner) {
+        return 0; // 勝利者は1位
+      } else {
+        return 1; // 敗北者は2位
+      }
+    });
+
+    // Glicko-2レーティング更新
+    const glickoPlayers = playerRatings.map(p => ({
+      rating: p.rating,
+      deviation: p.deviation,
+      volatility: p.volatility
+    }));
+
+    const updatedRatings = this.ratingSystem.updateMultiplayerRatings(glickoPlayers, gameResults);
+
+    // データベースに更新結果を保存
+    await Promise.all(
+      playerRatings.map(async (playerRating, index) => {
+        if (playerRating.user) {
+          const newRating = updatedRatings[index];
+          await this.dbService.updateUserRating(
+            playerRating.user.id,
+            newRating.rating,
+            newRating.deviation,
+            newRating.volatility
+          );
+
+          // ゲーム統計更新
+          const won = playerRating.player.role?.faction === winner;
+          await this.dbService.updateUserGameStats(playerRating.user.id, won);
+          
+          if (playerRating.player.role) {
+            await this.dbService.updatePlayerStats(
+              playerRating.user.id,
+              playerRating.player.role.name,
+              won
+            );
+          }
+        }
+      })
+    );
+  }
+
+  private async saveGameReplay(): Promise<void> {
+    const replayData = {
+      gameState: this.gameState,
+      chatHistory: this.chatHistory,
+      playerActions: this.gameState.nightActions,
+      votes: this.gameState.votingResults,
+      metadata: {
+        duration: this.gameState.updatedAt.getTime() - this.gameState.createdAt.getTime(),
+        aiPlayerCount: this.gameState.players.filter(p => p.isBot).length,
+        humanPlayerCount: this.gameState.players.filter(p => !p.isBot).length
+      }
+    };
+
+    await this.dbService.saveGameReplay(this.gameState.id, replayData);
+  }
+
+  private async updateGameStats(winner: Faction): Promise<void> {
+    // デイリー統計更新
+    await this.dbService.updateDailyStats(new Date());
+  }
+
+  async saveNightAction(action: NightAction): Promise<void> {
+    if (this.dbService) {
+      try {
+        await this.dbService.saveNightAction(
+          this.gameState.id,
+          action.playerId,
+          action.targetId,
+          action.actionType.toUpperCase() as any,
+          action.turn
+        );
+      } catch (error) {
+        console.error('Failed to save night action:', error);
+      }
+    }
+  }
+
+  async saveVote(voterId: string, targetId: string): Promise<void> {
+    if (this.dbService) {
+      try {
+        await this.dbService.saveVote(
+          this.gameState.id,
+          voterId,
+          targetId,
+          this.gameState.turn
+        );
+      } catch (error) {
+        console.error('Failed to save vote:', error);
+      }
+    }
+  }
+
+  async initializeGameInDatabase(): Promise<void> {
+    if (this.dbService) {
+      try {
+        await this.dbService.createGame(this.gameState.players.length);
+        
+        // プレイヤー参加情報を保存
+        await Promise.all(
+          this.gameState.players.map(async (player) => {
+            const user = player.isBot ? undefined : await this.dbService.getUserByName(player.name);
+            await this.dbService.addPlayerToGame(
+              this.gameState.id,
+              player.name,
+              user?.id,
+              player.isBot
+            );
+          })
+        );
+      } catch (error) {
+        console.error('Failed to initialize game in database:', error);
+      }
+    }
+  }
+
   destroy(): void {
     if (this.phaseTimer) {
       clearTimeout(this.phaseTimer);
     }
+    this.aiPlayerManager.clear();
   }
 }

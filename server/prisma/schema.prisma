@@ -1,0 +1,184 @@
+// Prisma schema for Project JIN AI werewolf game
+// CLAUDE.mdの設計に基づくデータベーススキーマ
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  email     String?  @unique
+  rating    Float    @default(1000.0) // Glicko-2レーティング
+  ratingDeviation Float @default(350.0)
+  volatility Float @default(0.06)
+  gamesPlayed Int @default(0)
+  gamesWon  Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // リレーション
+  gameParticipations GameParticipation[]
+  chatMessages       ChatMessage[]
+  friendships        Friendship[] @relation("UserFriendships")
+  friendOf           Friendship[] @relation("FriendOf")
+  
+  @@map("users")
+}
+
+model Friendship {
+  id       String @id @default(cuid())
+  userId   String
+  friendId String
+  status   String @default("PENDING")
+  createdAt DateTime @default(now())
+  
+  user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendOf", fields: [friendId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, friendId])
+  @@map("friendships")
+}
+
+model Game {
+  id          String      @id @default(cuid())
+  status      String      @default("WAITING")
+  phase       String      @default("NIGHT")
+  turn        Int         @default(1)
+  winner      String?     // 'human', 'ai', 'third'
+  playerCount Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  startedAt   DateTime?
+  endedAt     DateTime?
+  
+  // リレーション
+  participants GameParticipation[]
+  chatMessages ChatMessage[]
+  nightActions NightAction[]
+  votes        Vote[]
+  replay       GameReplay?
+  
+  @@map("games")
+}
+
+model GameParticipation {
+  id       String @id @default(cuid())
+  gameId   String
+  userId   String?  // nullの場合はAIプレイヤー
+  playerName String
+  isBot    Boolean @default(false)
+  role     String?
+  faction  String?
+  status   String @default("ALIVE")
+  eliminatedAt DateTime?
+  eliminationReason String? // 'vote', 'attack', 'disconnect'
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@unique([gameId, userId])
+  @@map("game_participations")
+}
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  gameId    String
+  userId    String?   // nullの場合はシステムメッセージまたはAI
+  playerName String?
+  content   String
+  phase     String
+  turn      Int
+  isSystem  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reactions MessageReaction[]
+  
+  @@map("chat_messages")
+}
+
+model MessageReaction {
+  id        String @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+  
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
+
+model NightAction {
+  id         String     @id @default(cuid())
+  gameId     String
+  playerId   String     // GameParticipationのid
+  targetId   String?
+  actionType String
+  turn       Int
+  result     String?    // 調査結果など
+  createdAt  DateTime   @default(now())
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@unique([gameId, playerId, turn])
+  @@map("night_actions")
+}
+
+model Vote {
+  id       String   @id @default(cuid())
+  gameId   String
+  voterId  String   // GameParticipationのid
+  targetId String   // GameParticipationのid
+  turn     Int
+  createdAt DateTime @default(now())
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@unique([gameId, voterId, turn])
+  @@map("votes")
+}
+
+model GameReplay {
+  id       String @id @default(cuid())
+  gameId   String @unique
+  data     String // JSON形式でゲーム全体のログを保存
+  createdAt DateTime @default(now())
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  @@map("game_replays")
+}
+
+// 統計情報
+model PlayerStats {
+  id          String @id @default(cuid())
+  userId      String
+  role        String
+  gamesPlayed Int    @default(0)
+  gamesWon    Int    @default(0)
+  winRate     Float  @default(0.0)
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, role])
+  @@map("player_stats")
+}
+
+model DailyStats {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  totalGames  Int      @default(0)
+  totalUsers  Int      @default(0)
+  avgGameDuration Float @default(0.0)
+  createdAt   DateTime @default(now())
+  
+  @@map("daily_stats")
+}

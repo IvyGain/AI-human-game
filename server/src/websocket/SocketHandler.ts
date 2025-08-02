@@ -45,6 +45,18 @@ export class SocketHandler {
         this.handleSendMessage(socket, content);
       });
 
+      socket.on('addReaction', (data) => {
+        this.handleAddReaction(socket, data);
+      });
+
+      socket.on('removeReaction', (data) => {
+        this.handleRemoveReaction(socket, data);
+      });
+
+      socket.on('voiceStateChange', (isSpeaking) => {
+        this.handleVoiceStateChange(socket, isSpeaking);
+      });
+
       socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         this.handleLeaveGame(socket);
@@ -114,9 +126,29 @@ export class SocketHandler {
   }
 
   private setupGamePhaseHandlers(gameId: string, game: any): void {
+    // 夜フェーズ: AIプレイヤーの行動を自動実行
+    game.onPhaseChange('night', async () => {
+      setTimeout(async () => {
+        await game.executeAINightActions();
+      }, 2000); // 2秒後にAI行動実行
+    });
+
+    // 朝フェーズ: 夜の結果を処理
     game.onPhaseChange('day_report', () => {
       const casualties = game.processNightActions();
       this.io.to(gameId).emit('nightResult', casualties);
+      
+      // システムメッセージで結果を通知
+      if (casualties.length > 0) {
+        const gameState = game.getGameState();
+        const casualtyNames = casualties.map((id: string) => {
+          const player = gameState.players.find((p: any) => p.id === id);
+          return player?.name || '不明';
+        });
+        this.sendSystemMessage(gameId, `☠️ ${casualtyNames.join(', ')} が襲撃されました`);
+      } else {
+        this.sendSystemMessage(gameId, '☀️ 平和な朝を迎えました');
+      }
       
       const winner = game.checkWinCondition();
       if (winner) {
@@ -125,9 +157,35 @@ export class SocketHandler {
         finalState.isFinished = true;
         this.io.to(gameId).emit('gameEnd', winner, finalState);
         gameManager.deleteGame(gameId);
+        return;
       }
     });
 
+    // 議論フェーズ: AIプレイヤーの議論を開始
+    game.onPhaseChange('day_discussion', () => {
+      game.startAIDiscussion((playerId: string, message: string) => {
+        const chatMessage = {
+          id: uuidv4(),
+          playerId,
+          content: message,
+          timestamp: new Date(),
+          phase: game.getGameState().phase,
+          turn: game.getGameState().turn
+        };
+        this.io.to(gameId).emit('chatMessage', chatMessage);
+      });
+    });
+
+    // 投票フェーズ: AIプレイヤーの投票を自動実行
+    game.onPhaseChange('day_vote', async () => {
+      game.stopAIDiscussion();
+      
+      setTimeout(async () => {
+        await game.executeAIVoting();
+      }, 2000); // 2秒後にAI投票実行
+    });
+
+    // 処刑フェーズ: 投票結果処理
     game.onPhaseChange('execution', () => {
       const voteResults = game.processVotes();
       this.io.to(gameId).emit('voteResult', voteResults);
@@ -139,9 +197,11 @@ export class SocketHandler {
         finalState.isFinished = true;
         this.io.to(gameId).emit('gameEnd', winner, finalState);
         gameManager.deleteGame(gameId);
+        return;
       }
     });
 
+    // 全フェーズでフェーズ変更を通知
     const phases = ['night', 'day_report', 'day_discussion', 'day_vote', 'execution'] as const;
     phases.forEach(phase => {
       game.onPhaseChange(phase, () => {
@@ -194,7 +254,7 @@ export class SocketHandler {
     }
   }
 
-  private handleSendMessage(socket: Socket, content: string): void {
+  private async handleSendMessage(socket: Socket, content: string): Promise<void> {
     const { gameId, playerId } = socket.data;
     if (!gameId || !playerId) {
       socket.emit('error', 'Not in a game');
@@ -213,15 +273,66 @@ export class SocketHandler {
       return;
     }
 
-    const message: ChatMessage = {
+    // GameEngineのaddChatMessageを使用してAIに学習させる
+    const message = await game.addChatMessage(playerId, content);
+    this.io.to(gameId).emit('chatMessage', message);
+  }
+
+  private handleAddReaction(socket: Socket, data: { messageId: string; emoji: string }): void {
+    const { gameId, playerId } = socket.data;
+    if (!gameId || !playerId) {
+      socket.emit('error', 'Not in a game');
+      return;
+    }
+
+    // リアクション管理（簡易実装）
+    // TODO: GameEngineにリアクション管理機能を追加
+    this.io.to(gameId).emit('messageReaction', {
+      messageId: data.messageId,
+      emoji: data.emoji,
+      playerIds: [playerId] // 実際にはプレイヤーIDを追加/削除する処理が必要
+    });
+  }
+
+  private handleRemoveReaction(socket: Socket, data: { messageId: string; emoji: string }): void {
+    const { gameId, playerId } = socket.data;
+    if (!gameId || !playerId) {
+      socket.emit('error', 'Not in a game');
+      return;
+    }
+
+    // リアクション削除（簡易実装）
+    // TODO: GameEngineにリアクション管理機能を追加
+    this.io.to(gameId).emit('messageReaction', {
+      messageId: data.messageId,
+      emoji: data.emoji,
+      playerIds: [] // 実際にはプレイヤーIDを削除する処理が必要
+    });
+  }
+
+  private handleVoiceStateChange(socket: Socket, isSpeaking: boolean): void {
+    const { gameId, playerId } = socket.data;
+    if (!gameId || !playerId) return;
+
+    const game = gameManager.getGame(gameId);
+    if (!game) return;
+
+    const player = game.getPlayer(playerId);
+    if (!player || player.status !== 'alive') return;
+
+    // 音声状態を他のプレイヤーに通知
+    socket.to(gameId).emit('playerVoiceState', playerId, isSpeaking);
+  }
+
+  private sendSystemMessage(gameId: string, content: string): void {
+    const systemMessage: ChatMessage = {
       id: uuidv4(),
-      playerId,
+      playerId: 'system',
       content,
       timestamp: new Date(),
-      phase: game.getGameState().phase,
-      turn: game.getGameState().turn
+      phase: 'day_report',
+      turn: 0
     };
-
-    this.io.to(gameId).emit('chatMessage', message);
+    this.io.to(gameId).emit('chatMessage', systemMessage);
   }
 }

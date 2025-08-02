@@ -1,8 +1,91 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/**
+ * CLAUDE.mdの設計に基づくアニメーション定義
+ * Project JINのテーマに合わせたサイバーパンク風エフェクト
+ */
 
-/* Project JIN - カスタムアニメーション */
+export const ANIMATIONS = {
+  // フェーズ変更アニメーション
+  phaseTransition: {
+    night: {
+      className: "animate-fade-to-dark",
+      background: "from-gray-900 to-indigo-900",
+      duration: 2000
+    },
+    day_report: {
+      className: "animate-dawn-break",
+      background: "from-orange-800 to-yellow-600",
+      duration: 1500
+    },
+    day_discussion: {
+      className: "animate-fade-to-light",
+      background: "from-blue-500 to-cyan-400",
+      duration: 1000
+    },
+    day_vote: {
+      className: "animate-pulse-red",
+      background: "from-red-600 to-pink-500",
+      duration: 1000
+    },
+    execution: {
+      className: "animate-lightning",
+      background: "from-purple-800 to-red-800",
+      duration: 3000
+    }
+  },
+
+  // プレイヤー状態変更
+  playerElimination: {
+    attack: {
+      className: "animate-glitch-death",
+      effect: "filter: brightness(0.3) saturate(0) hue-rotate(0deg)",
+      duration: 2000
+    },
+    vote: {
+      className: "animate-fade-out",
+      effect: "filter: brightness(0.5) grayscale(1)",
+      duration: 1500
+    }
+  },
+
+  // 役職表示
+  roleReveal: {
+    className: "animate-matrix-reveal",
+    duration: 3000
+  },
+
+  // チャットメッセージ
+  messageEntry: {
+    human: "animate-slide-in-left",
+    ai: "animate-slide-in-right",
+    system: "animate-fade-in-center"
+  },
+
+  // 投票・行動エフェクト
+  actionEffects: {
+    investigate: "animate-scan-pulse",
+    protect: "animate-shield-glow",
+    attack: "animate-red-flash",
+    vote: "animate-target-lock"
+  },
+
+  // UI要素
+  button: {
+    hover: "transition-all duration-200 hover:scale-105 hover:shadow-lg",
+    click: "transform active:scale-95",
+    loading: "animate-pulse"
+  },
+
+  // 通知・警告
+  notification: {
+    success: "animate-bounce-in text-green-400",
+    error: "animate-shake text-red-400",
+    warning: "animate-pulse text-yellow-400",
+    info: "animate-fade-in text-blue-400"
+  }
+};
+
+// カスタムCSS キーフレーム
+export const CUSTOM_KEYFRAMES = `
 @keyframes fade-to-dark {
   0% { 
     filter: brightness(1) hue-rotate(0deg);
@@ -200,131 +283,50 @@
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
+`;
 
-/* アニメーションクラス */
-.animate-fade-to-dark {
-  animation: fade-to-dark 2s ease-in-out;
-}
+// パーティクルエフェクト用の設定
+export const PARTICLE_EFFECTS = {
+  elimination: {
+    count: 50,
+    colors: ['#ef4444', '#dc2626', '#b91c1c'],
+    size: { min: 2, max: 6 },
+    velocity: { min: 50, max: 200 },
+    lifetime: 2000
+  },
+  roleReveal: {
+    count: 30,
+    colors: ['#3b82f6', '#1d4ed8', '#1e40af'],
+    size: { min: 1, max: 4 },
+    velocity: { min: 30, max: 150 },
+    lifetime: 3000
+  },
+  victory: {
+    count: 100,
+    colors: ['#22c55e', '#16a34a', '#15803d', '#fbbf24', '#f59e0b'],
+    size: { min: 3, max: 8 },
+    velocity: { min: 100, max: 300 },
+    lifetime: 5000
+  }
+};
 
-.animate-dawn-break {
-  animation: dawn-break 1.5s ease-in-out;
-}
-
-.animate-fade-to-light {
-  animation: fade-to-light 1s ease-in-out;
-}
-
-.animate-pulse-red {
-  animation: pulse-red 1s ease-in-out infinite;
-}
-
-.animate-lightning {
-  animation: lightning 3s ease-in-out;
-}
-
-.animate-glitch-death {
-  animation: glitch-death 2s ease-in-out forwards;
-}
-
-.animate-matrix-reveal {
-  animation: matrix-reveal 3s ease-in-out;
-}
-
-.animate-slide-in-left {
-  animation: slide-in-left 0.5s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.5s ease-out;
-}
-
-.animate-fade-in-center {
-  animation: fade-in-center 0.5s ease-out;
-}
-
-.animate-scan-pulse {
-  animation: scan-pulse 2s ease-in-out infinite;
-}
-
-.animate-shield-glow {
-  animation: shield-glow 2s ease-in-out infinite;
-}
-
-.animate-red-flash {
-  animation: red-flash 0.5s ease-in-out;
-}
-
-.animate-target-lock {
-  animation: target-lock 1s ease-in-out;
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.6s ease-out;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* カスタムユーティリティ */
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
-}
-
-.backdrop-blur {
-  backdrop-filter: blur(8px);
-}
-
-.backdrop-blur-lg {
-  backdrop-filter: blur(16px);
-}
-
-/* スクロールバーのカスタマイズ */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.5);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(107, 114, 128, 0.7);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.9);
-}
-
-/* フォーカスアウトライン */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900;
-}
-
-/* グラデーションテキスト */
-.gradient-text {
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* カードホバーエフェクト */
-.card-hover {
-  @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
-}
-
-/* 夜モード用のグローエフェクト */
-.night-glow {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-}
-
-.day-glow {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-}
-
-.danger-glow {
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-}
+// 音響エフェクト設定
+export const SOUND_EFFECTS = {
+  phaseChange: {
+    night: '/sounds/night-transition.mp3',
+    day: '/sounds/day-transition.mp3',
+    vote: '/sounds/vote-phase.mp3'
+  },
+  actions: {
+    investigate: '/sounds/scan.mp3',
+    protect: '/sounds/shield.mp3',
+    attack: '/sounds/attack.mp3',
+    eliminate: '/sounds/elimination.mp3'
+  },
+  ui: {
+    click: '/sounds/click.mp3',
+    hover: '/sounds/hover.mp3',
+    notification: '/sounds/notification.mp3',
+    error: '/sounds/error.mp3'
+  }
+};
