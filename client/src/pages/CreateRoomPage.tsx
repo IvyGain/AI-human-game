@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, 
+  Users, 
+  Lock, 
+  Unlock, 
+  Clock, 
+  Settings as SettingsIcon,
+  Plus,
+  Minus,
+  Play
+} from 'lucide-react';
+import Card from '../components/UI/Card';
+import Button from '../components/UI/Button';
+import Input from '../components/UI/Input';
+import Badge from '../components/UI/Badge';
 
 interface RoomSettings {
   roomName: string;
@@ -109,19 +124,22 @@ const CreateRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-black/30 backdrop-blur-lg rounded-2xl p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* モバイル最適化コンテナ */}
+      <div className="safe-area-inset px-4 py-6 sm:px-6 sm:py-8">
+        <div className="max-w-2xl mx-auto sm:max-w-4xl">
+          
           {/* ヘッダー */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4 mb-6 sm:mb-8">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={ArrowLeft}
+              onClick={() => navigate('/')}
+              className="text-gray-400 hover:text-white p-2"
+            />
             <div>
-              <button
-                onClick={() => navigate('/')}
-                className="text-gray-400 hover:text-white mb-4 transition-colors"
-              >
-                ← メインメニューに戻る
-              </button>
-              <h1 className="text-3xl font-bold text-white">プライベートルーム作成</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">ルーム作成</h1>
               <p className="text-gray-300">友達と一緒に楽しむための専用ルームを作成</p>
             </div>
           </div>
