@@ -7,13 +7,19 @@ import {
   ChatMessage 
 } from '@project-jin/shared';
 import { gameManager } from '../game';
+import { RoomManager } from '../room';
 import { v4 as uuidv4 } from 'uuid';
 
 export class SocketHandler {
   private io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
+  private roomManager: RoomManager;
 
-  constructor(io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>) {
+  constructor(
+    io: Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>,
+    roomManager: RoomManager
+  ) {
     this.io = io;
+    this.roomManager = roomManager;
     this.setupEventHandlers();
   }
 
@@ -57,9 +63,39 @@ export class SocketHandler {
         this.handleVoiceStateChange(socket, isSpeaking);
       });
 
+      // === ROOM MANAGEMENT EVENTS ===
+      socket.on('joinRoom', (roomCode: string, playerName: string, password?: string) => {
+        this.handleJoinRoom(socket, roomCode, playerName, password);
+      });
+
+      socket.on('leaveRoom', () => {
+        this.handleLeaveRoom(socket);
+      });
+
+      socket.on('setReady', (isReady: boolean) => {
+        this.handleSetReady(socket, isReady);
+      });
+
+      socket.on('addAIPlayer', () => {
+        this.handleAddAIPlayer(socket);
+      });
+
+      socket.on('removeAIPlayer', (aiPlayerId: string) => {
+        this.handleRemoveAIPlayer(socket, aiPlayerId);
+      });
+
+      socket.on('startRoomGame', () => {
+        this.handleStartRoomGame(socket);
+      });
+
+      socket.on('sendRoomMessage', (content: string) => {
+        this.handleSendRoomMessage(socket, content);
+      });
+
       socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         this.handleLeaveGame(socket);
+        this.handleLeaveRoom(socket);
       });
     });
   }
@@ -334,5 +370,232 @@ export class SocketHandler {
       turn: 0
     };
     this.io.to(gameId).emit('chatMessage', systemMessage);
+  }
+
+  // === ROOM MANAGEMENT HANDLERS ===
+
+  private handleJoinRoom(socket: Socket, roomCode: string, playerName: string, password?: string): void {
+    try {
+      const room = this.roomManager.joinRoomByCode(roomCode, playerName, socket.id, password);
+      
+      socket.data.roomId = room.id;
+      socket.data.playerId = room.players.find(p => p.socketId === socket.id)?.id;
+      socket.join(room.id);
+
+      // 参加者に最新のルーム状態を送信
+      this.io.to(room.id).emit('roomUpdate', {
+        room: {
+          id: room.id,
+          code: room.code,
+          settings: room.settings,
+          players: room.players,
+          status: room.status,
+          createdAt: room.createdAt
+        }
+      });
+
+      // 参加通知
+      socket.to(room.id).emit('roomMessage', {
+        type: 'system',
+        content: `${playerName}が参加しました`,
+        timestamp: new Date()
+      });
+
+      console.log(`Player ${playerName} joined room ${roomCode} via WebSocket`);
+    } catch (error) {
+      socket.emit('error', error instanceof Error ? error.message : 'Failed to join room');
+    }
+  }
+
+  private handleLeaveRoom(socket: Socket): void {
+    const roomId = socket.data.roomId;
+    if (!roomId) return;
+
+    const room = this.roomManager.leaveRoomBySocketId(socket.id);
+    
+    if (room) {
+      // 残りの参加者に更新を通知
+      this.io.to(room.id).emit('roomUpdate', {
+        room: {
+          id: room.id,
+          code: room.code,
+          settings: room.settings,
+          players: room.players,
+          status: room.status,
+          createdAt: room.createdAt
+        }
+      });
+    }
+
+    socket.leave(roomId);
+    socket.data.roomId = undefined;
+    socket.data.playerId = undefined;
+  }
+
+  private handleSetReady(socket: Socket, isReady: boolean): void {
+    const { roomId, playerId } = socket.data;
+    if (!roomId || !playerId) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    const room = this.roomManager.setPlayerReady(playerId, isReady);
+    if (room) {
+      this.io.to(room.id).emit('roomUpdate', {
+        room: {
+          id: room.id,
+          code: room.code,
+          settings: room.settings,
+          players: room.players,
+          status: room.status,
+          createdAt: room.createdAt
+        }
+      });
+    }
+  }
+
+  private handleAddAIPlayer(socket: Socket): void {
+    const { roomId, playerId } = socket.data;
+    if (!roomId || !playerId) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    try {
+      const room = this.roomManager.addAIPlayer(roomId, playerId);
+      if (room) {
+        this.io.to(room.id).emit('roomUpdate', {
+          room: {
+            id: room.id,
+            code: room.code,
+            settings: room.settings,
+            players: room.players,
+            status: room.status,
+            createdAt: room.createdAt
+          }
+        });
+
+        // 追加通知
+        const addedAI = room.players[room.players.length - 1];
+        socket.to(room.id).emit('roomMessage', {
+          type: 'system',
+          content: `AIプレイヤー ${addedAI.name} が追加されました`,
+          timestamp: new Date()
+        });
+      }
+    } catch (error) {
+      socket.emit('error', error instanceof Error ? error.message : 'Failed to add AI player');
+    }
+  }
+
+  private handleRemoveAIPlayer(socket: Socket, aiPlayerId: string): void {
+    const { roomId, playerId } = socket.data;
+    if (!roomId || !playerId) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    try {
+      const room = this.roomManager.removeAIPlayer(roomId, playerId, aiPlayerId);
+      if (room) {
+        this.io.to(room.id).emit('roomUpdate', {
+          room: {
+            id: room.id,
+            code: room.code,
+            settings: room.settings,
+            players: room.players,
+            status: room.status,
+            createdAt: room.createdAt
+          }
+        });
+      }
+    } catch (error) {
+      socket.emit('error', error instanceof Error ? error.message : 'Failed to remove AI player');
+    }
+  }
+
+  private handleStartRoomGame(socket: Socket): void {
+    const { roomId, playerId } = socket.data;
+    if (!roomId || !playerId) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    try {
+      if (!this.roomManager.canStartGame(roomId)) {
+        socket.emit('error', 'ゲーム開始条件が満たされていません');
+        return;
+      }
+
+      const room = this.roomManager.startGame(roomId);
+      if (room) {
+        // ゲーム作成
+        const gameId = gameManager.createGame();
+        const game = gameManager.getGame(gameId);
+        
+        if (game) {
+          // プレイヤーをゲームに追加
+          room.players.forEach(player => {
+            game.addPlayer(player.name, player.isAI);
+          });
+
+          // ゲーム開始
+          game.startGame();
+          this.setupGamePhaseHandlers(gameId, game);
+
+          // 全プレイヤーをゲームルームに移動
+          this.io.to(roomId).emit('gameStarted', {
+            gameId,
+            gameState: game.getGameState()
+          });
+
+          // WebSocketルームをゲームルームに変更
+          const sockets = this.io.sockets.adapter.rooms.get(roomId);
+          if (sockets) {
+            for (const socketId of sockets) {
+              const playerSocket = this.io.sockets.sockets.get(socketId);
+              if (playerSocket) {
+                playerSocket.leave(roomId);
+                playerSocket.join(gameId);
+                playerSocket.data.gameId = gameId;
+                playerSocket.data.roomId = undefined;
+              }
+            }
+          }
+
+          console.log(`Game started for room ${room.code} -> game ${gameId}`);
+        }
+      }
+    } catch (error) {
+      socket.emit('error', error instanceof Error ? error.message : 'Failed to start game');
+    }
+  }
+
+  private handleSendRoomMessage(socket: Socket, content: string): void {
+    const { roomId, playerId } = socket.data;
+    if (!roomId || !playerId) {
+      socket.emit('error', 'Not in a room');
+      return;
+    }
+
+    const room = this.roomManager.getRoom(roomId);
+    if (!room) {
+      socket.emit('error', 'Room not found');
+      return;
+    }
+
+    const player = room.players.find(p => p.id === playerId);
+    if (!player) {
+      socket.emit('error', 'Player not found in room');
+      return;
+    }
+
+    // チャットメッセージを送信
+    this.io.to(roomId).emit('roomMessage', {
+      type: 'chat',
+      playerName: player.name,
+      content,
+      timestamp: new Date()
+    });
   }
 }

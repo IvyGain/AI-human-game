@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { SocketHandler } from './websocket';
 import { gameManager } from './game';
 import { DatabaseService } from './database/DatabaseService.js';
+import { RoomManager } from './room';
 import { 
   ServerToClientEvents, 
   ClientToServerEvents, 
@@ -16,6 +17,7 @@ dotenv.config();
 
 const app = express();
 const dbService = new DatabaseService();
+const roomManager = new RoomManager();
 
 // データベース接続を初期化
 dbService.connect().catch(console.error);
@@ -41,7 +43,9 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
-    activeGames: gameManager.getActiveGamesCount()
+    activeGames: gameManager.getActiveGamesCount(),
+    activeRooms: roomManager.getActiveRoomsCount(),
+    roomStats: roomManager.getStats()
   });
 });
 
@@ -90,6 +94,153 @@ app.get('/api/games/:gameId/chat', (req, res) => {
   const chatHistory = game.getRecentChatMessages(limit);
   
   res.json({ messages: chatHistory });
+});
+
+// === ROOM MANAGEMENT ENDPOINTS ===
+
+// Create room endpoint
+app.post('/api/rooms', (req, res) => {
+  try {
+    const { settings, playerName } = req.body;
+    
+    if (!settings || !playerName) {
+      res.status(400).json({ error: 'Settings and player name are required' });
+      return;
+    }
+
+    // Note: socketId will be handled by WebSocket connection
+    const room = roomManager.createRoom(settings, playerName, '');
+    
+    res.status(201).json({
+      room: {
+        id: room.id,
+        code: room.code,
+        settings: room.settings,
+        players: room.players,
+        status: room.status,
+        createdAt: room.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Room creation error:', error);
+    res.status(500).json({ error: 'Failed to create room' });
+  }
+});
+
+// Get public rooms endpoint
+app.get('/api/rooms/public', (req, res) => {
+  try {
+    const rooms = roomManager.getPublicRooms();
+    const roomsData = rooms.map(room => ({
+      id: room.id,
+      name: room.settings.roomName,
+      hostName: room.players.find(p => p.isHost)?.name || 'Unknown',
+      players: room.players.length,
+      maxPlayers: room.settings.maxPlayers,
+      isPrivate: room.settings.isPrivate,
+      gameMode: 'スタンダード', // TODO: Add game mode to settings
+      created: room.createdAt
+    }));
+    
+    res.json({ rooms: roomsData });
+  } catch (error) {
+    console.error('Get public rooms error:', error);
+    res.status(500).json({ error: 'Failed to get public rooms' });
+  }
+});
+
+// Get room by code endpoint
+app.get('/api/rooms/code/:code', (req, res) => {
+  try {
+    const room = roomManager.getRoomByCode(req.params.code);
+    
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    res.json({
+      room: {
+        id: room.id,
+        code: room.code,
+        settings: room.settings,
+        players: room.players,
+        status: room.status,
+        createdAt: room.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Get room by code error:', error);
+    res.status(500).json({ error: 'Failed to get room' });
+  }
+});
+
+// Join room by code endpoint
+app.post('/api/rooms/join/code', (req, res) => {
+  try {
+    const { code, playerName, password } = req.body;
+    
+    if (!code || !playerName) {
+      res.status(400).json({ error: 'Code and player name are required' });
+      return;
+    }
+
+    // Note: socketId will be handled by WebSocket connection
+    const room = roomManager.joinRoomByCode(code, playerName, '', password);
+    
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    res.json({
+      room: {
+        id: room.id,
+        code: room.code,
+        settings: room.settings,
+        players: room.players,
+        status: room.status,
+        createdAt: room.createdAt
+      }
+    });
+  } catch (error: any) {
+    console.error('Join room error:', error);
+    res.status(400).json({ error: error.message || 'Failed to join room' });
+  }
+});
+
+// Join room by ID endpoint
+app.post('/api/rooms/join/:roomId', (req, res) => {
+  try {
+    const { playerName, password } = req.body;
+    
+    if (!playerName) {
+      res.status(400).json({ error: 'Player name is required' });
+      return;
+    }
+
+    // Note: socketId will be handled by WebSocket connection
+    const room = roomManager.joinRoomById(req.params.roomId, playerName, '', password);
+    
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' });
+      return;
+    }
+
+    res.json({
+      room: {
+        id: room.id,
+        code: room.code,
+        settings: room.settings,
+        players: room.players,
+        status: room.status,
+        createdAt: room.createdAt
+      }
+    });
+  } catch (error: any) {
+    console.error('Join room error:', error);
+    res.status(400).json({ error: error.message || 'Failed to join room' });
+  }
 });
 
 // User management endpoints
@@ -201,7 +352,7 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 // Initialize WebSocket handler
-new SocketHandler(io);
+new SocketHandler(io, roomManager);
 
 const PORT = process.env.PORT || 8080;
 
