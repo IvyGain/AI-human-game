@@ -58,3 +58,13 @@
 [1] 15:27:11 [vite] hmr update /src/pages/GamePage.tsx, /src/index.css
 [0] Client disconnected: A7GfJ3A_jpRM33KiAAAI
 [0] Client connected: jgmTfcT8hwZzg3dMAAAK
+[1] 15:34:00 [vite] vite.config.ts changed, restarting server...
+[1] 15:34:00 [vite] server restarted.
+[1] 
+[1]   ➜  Local:   http://localhost:3001/
+[1]   ➜  Network: http://192.168.1.21:3001/
+[1] 15:34:01 [vite] ws proxy socket error:
+[1] Error: read ECONNRESET
+[1]     at TCP.onStreamRead (node:internal/stream_base_commons:216:20)
+[0] Client connected: 39pacp20iVCTxBYSAAAN
+[0] Client disconnected: jgmTfcT8hwZzg3dMAAAK
