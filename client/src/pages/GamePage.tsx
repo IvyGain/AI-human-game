@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { socketService } from '../services/socket';
 import { ChatBox } from '../components/ChatBox';
@@ -10,14 +10,19 @@ import { PhaseDisplay } from '../components/PhaseDisplay';
 export function GamePage() {
   const { gameId } = useParams<{ gameId: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const playerName = searchParams.get('name');
+  
+  // 新しいフローでは location.state から情報を取得
+  const { roomSettings, players, playerName: statePlayerName } = location.state || {};
+  const playerName = statePlayerName || searchParams.get('name');
   
   const { gameState, setGameState, setCurrentPlayer, addMessage, reset } = useGameStore();
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (!gameId || !playerName) {
+    // 新しいフローでは gameId は不要
+    if (!playerName) {
       navigate('/');
       return;
     }
@@ -26,7 +31,8 @@ export function GamePage() {
     
     socket.on('connect', () => {
       setIsConnected(true);
-      socket.emit('joinGame', gameId, playerName);
+      // 新しいフローでは roomSettings と players を送信
+      socket.emit('startGame', { roomSettings, players, playerName });
     });
 
     socket.on('disconnect', () => {
@@ -111,7 +117,15 @@ export function GamePage() {
       <div className="container mx-auto p-4">
         <div className="mb-4">
           <h1 className="text-2xl font-bold">Project JIN</h1>
-          <p className="text-sm text-gray-400">ゲームID: {gameId}</p>
+          <p className="text-sm text-gray-400">
+            {roomSettings?.roomName || 'ゲーム進行中'} - プレイヤー: {playerName}
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="text-red-400 hover:text-red-300 transition-colors text-sm"
+          >
+            ゲームを退出
+          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
