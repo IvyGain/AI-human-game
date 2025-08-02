@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { Player } from '@project-jin/shared';
 
 interface VoiceChatProps {
   enabled: boolean;
@@ -8,7 +7,7 @@ interface VoiceChatProps {
 
 export function VoiceChat({ enabled }: VoiceChatProps) {
   const { gameState, currentPlayer } = useGameStore();
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
+
   const [isMuted, setIsMuted] = useState(false);
   const [mutedPlayers, setMutedPlayers] = useState<Set<string>>(new Set());
   const [speakingPlayers, setSpeakingPlayers] = useState<Set<string>>(new Set());
@@ -59,7 +58,7 @@ export function VoiceChat({ enabled }: VoiceChatProps) {
       
       // 音声アクティビティの閾値
       if (average > 30) {
-        if (!pushToTalk || isVoiceActive) {
+        if (!pushToTalk) {
           // 音声送信中の処理
           setSpeakingPlayers(prev => new Set([...prev, currentPlayer?.id || '']));
         }
@@ -108,17 +107,7 @@ export function VoiceChat({ enabled }: VoiceChatProps) {
     });
   };
 
-  const handlePushToTalkPress = () => {
-    if (pushToTalk) {
-      setIsVoiceActive(true);
-    }
-  };
 
-  const handlePushToTalkRelease = () => {
-    if (pushToTalk) {
-      setIsVoiceActive(false);
-    }
-  };
 
   const canUseVoice = gameState?.phase === 'day_discussion' && 
                      currentPlayer?.status === 'alive' && 
@@ -152,7 +141,7 @@ export function VoiceChat({ enabled }: VoiceChatProps) {
           <div className="mb-4 p-3 bg-gray-700 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className={`w-3 h-3 rounded-full ${isVoiceActive ? 'bg-green-500' : 'bg-gray-500'}`} />
+                <div className="w-3 h-3 rounded-full bg-gray-500" />
                 <span className="font-medium">{currentPlayer?.name}</span>
               </div>
               <button

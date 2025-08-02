@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GameState } from '@project-jin/shared';
 import { socketService } from '../services/socket';
 import { useGameStore } from '../store/gameStore';

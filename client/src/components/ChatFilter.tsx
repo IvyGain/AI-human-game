@@ -1,4 +1,3 @@
-import React from 'react';
 import { Player } from '@project-jin/shared';
 
 interface ChatFilterProps {

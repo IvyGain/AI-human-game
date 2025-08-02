@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameState, GamePhase } from '@project-jin/shared';
 import { useAnimations } from '../hooks/useAnimations';
 

@@ -1,0 +1,29 @@
+
+> project-jin@0.1.0 dev
+> npm run build:shared && concurrently "npm run dev --workspace=server" "npm run dev --workspace=client"
+
+
+> project-jin@0.1.0 build:shared
+> npm run build --workspace=shared
+
+
+> @project-jin/shared@0.1.0 build
+> tsc
+
+[0] 
+[0] > @project-jin/server@0.1.0 dev
+[0] > tsx watch src/index.ts
+[0] 
+[1] 
+[1] > @project-jin/client@0.1.0 dev
+[1] > vite
+[1] 
+[1] 
+[1]   VITE v5.4.19  ready in 103 ms
+[1] 
+[1]   ➜  Local:   http://localhost:3001/
+[1]   ➜  Network: use --host to expose
+[0] Server running on port 8080
+[0] Database connected successfully
+[0] Client connected: bfO2Tzqi3BzTYAq_AAAB
+[0] Client disconnected: bfO2Tzqi3BzTYAq_AAAB
