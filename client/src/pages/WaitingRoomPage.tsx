@@ -41,6 +41,7 @@ const WaitingRoomPage: React.FC = () => {
   };
 
   if (!roomData || !playerName) {
+    console.log('ルームデータまたはプレイヤー名が不足しています。メニューに戻ります。');
     navigate('/');
     return null;
   }
@@ -62,8 +63,10 @@ const WaitingRoomPage: React.FC = () => {
     const socket = socketService.connect();
     
     socket.on('connect', () => {
+      console.log('WebSocket接続成功');
       setIsConnected(true);
       // ルームに参加
+      console.log(`ルーム参加試行: コード=${room.code}, プレイヤー=${playerName}, 観戦者=${isSpectator}`);
       socket.emit('joinRoom', room.code, playerName, undefined, isSpectator);
     });
 
@@ -101,7 +104,9 @@ const WaitingRoomPage: React.FC = () => {
       
       // ルームが見つからない場合は、メニューに戻る
       if (message.includes('ルームが見つかりません') || message.includes('Room not found')) {
-        alert(`エラー: ${message}\n\nメニューに戻ります。`);
+        console.log('ルームが見つからないため、メニューに戻ります');
+        // 即座にWebSocket接続を切断してさらなるエラーを防ぐ
+        socketService.disconnect();
         navigate('/');
       } else {
         alert(`エラー: ${message}`);
