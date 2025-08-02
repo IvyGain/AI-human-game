@@ -436,3 +436,8 @@
 [1] 6:18:57 [vite] hmr update /src/pages/MainMenuPage.tsx, /src/index.css
 [1] 6:19:20 [vite] hmr update /src/pages/CreateRoomPage.tsx, /src/index.css
 [1] 6:19:44 [vite] hmr update /src/pages/CreateRoomPage.tsx, /src/index.css
+[1] 6:56:42 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 6:56:58 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 6:57:24 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 6:59:13 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 7:00:35 [vite] hmr update /src/pages/CreateRoomPage.tsx, /src/index.css

@@ -1,5 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, 
+  Search, 
+  RefreshCw, 
+  Users, 
+  Clock, 
+  Lock,
+  Eye,
+  Play,
+  Hash,
+  Gamepad2
+} from 'lucide-react';
+import Card from '../components/UI/Card';
+import Button from '../components/UI/Button';
+import Input from '../components/UI/Input';
+import Badge from '../components/UI/Badge';
 
 interface Room {
   id: string;
@@ -175,154 +191,194 @@ const JoinRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-black/30 backdrop-blur-lg rounded-2xl p-8">
-          <button
-            onClick={() => navigate('/')}
-            className="text-gray-400 hover:text-white mb-6 transition-colors"
-          >
-            ← メインメニューに戻る
-          </button>
-
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">ルーム参加</h1>
-            <p className="text-gray-300">既存のルームに参加して他のプレイヤーと対戦</p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* モバイル最適化コンテナ */}
+      <div className="safe-area-inset px-4 py-6 sm:px-6 sm:py-8">
+        <div className="max-w-2xl mx-auto sm:max-w-4xl">
+          
+          {/* ヘッダー */}
+          <div className="flex items-center gap-4 mb-6 sm:mb-8">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={ArrowLeft}
+              onClick={() => navigate('/')}
+              className="text-gray-400 hover:text-white p-2"
+            />
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">ルーム参加</h1>
+              <p className="text-gray-300 text-sm sm:text-base">既存のルームに参加して他のプレイヤーと対戦</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
             {/* プレイヤー名入力 */}
             <div className="space-y-6">
-              <div className="bg-black/20 p-6 rounded-lg">
-                <h3 className="text-xl font-bold text-white mb-4">プレイヤー情報</h3>
-                <div>
-                  <label className="block text-white font-semibold mb-2">
-                    あなたの名前 *
-                  </label>
-                  <input
-                    type="text"
+              <Card variant="glass" padding="lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-blue-600/20 rounded-xl">
+                    <Users className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">プレイヤー情報</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <Input
+                    label="あなたの名前 *"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     placeholder="プレイヤー名を入力"
-                    className="w-full p-3 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                    variant="filled"
                     maxLength={20}
                   />
-                </div>
-                
-                {/* 観戦者オプション */}
-                <div className="mt-4">
-                  <label className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isSpectator}
-                      onChange={(e) => setIsSpectator(e.target.checked)}
-                      className="w-4 h-4 text-purple-600 bg-black/50 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
-                    />
-                    <div>
-                      <span className="text-white font-medium">観戦者として参加</span>
-                      <div className="text-sm text-gray-300">
-                        ゲームに参加せず、観戦のみを行います
+                  
+                  {/* 観戦者オプション */}
+                  <div className="mt-6">
+                    <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-white/5 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={isSpectator}
+                        onChange={(e) => setIsSpectator(e.target.checked)}
+                        className="w-5 h-5 mt-0.5 text-purple-600 bg-gray-700 border-gray-600 rounded focus:ring-purple-500 focus:ring-2"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-purple-400" />
+                          <span className="text-white font-medium">観戦者として参加</span>
+                        </div>
+                        <p className="text-sm text-gray-300 mt-1">
+                          ゲームに参加せず、観戦のみを行います
+                        </p>
                       </div>
-                    </div>
-                  </label>
+                    </label>
+                  </div>
                 </div>
-              </div>
+              </Card>
 
               {/* ルームコード参加 */}
-              <div className="bg-black/20 p-6 rounded-lg">
-                <h3 className="text-xl font-bold text-white mb-4">🔑 ルームコード参加</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-white font-semibold mb-2">
-                      ルームコード
-                    </label>
-                    <input
-                      type="text"
-                      value={roomCode}
-                      onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                      placeholder="ABC123"
-                      className="w-full p-3 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none font-mono"
-                      maxLength={6}
-                    />
+              <Card variant="glass" padding="lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-green-600/20 rounded-xl">
+                    <Hash className="w-5 h-5 text-green-400" />
                   </div>
-                  <button
+                  <h3 className="text-xl font-bold text-white">ルームコード参加</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  <Input
+                    label="ルームコード"
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="ABC123"
+                    variant="filled"
+                    maxLength={6}
+                    className="font-mono text-center tracking-wider"
+                  />
+                  
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    icon={Play}
                     onClick={joinRoomByCode}
                     disabled={!playerName.trim() || !roomCode.trim()}
-                    className={`w-full py-3 rounded-lg font-bold transition-all ${
-                      !playerName.trim() || !roomCode.trim()
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
-                    }`}
                   >
                     参加
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </Card>
             </div>
 
             {/* 公開ルーム一覧 */}
-            <div className="bg-black/20 p-6 rounded-lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">🌐 公開ルーム一覧</h3>
-                <button
+            <Card variant="glass" padding="lg">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-cyan-600/20 rounded-xl">
+                    <Search className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">公開ルーム一覧</h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={RefreshCw}
                   onClick={fetchPublicRooms}
                   disabled={isLoading}
-                  className="text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
-                  title="更新"
-                >
-                  {isLoading ? '⏳' : '🔄'}
-                </button>
-              </div>
-
-              <div className="mb-4">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="ルーム名やホスト名で検索..."
-                  className="w-full p-2 bg-black/50 border border-gray-600 rounded text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
+                  loading={isLoading}
+                  className="text-cyan-400 hover:text-cyan-300"
                 />
               </div>
 
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="mb-6">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="ルーム名やホスト名で検索..."
+                  variant="filled"
+                  icon={Search}
+                  iconPosition="left"
+                />
+              </div>
+
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {filteredRooms.map((room) => (
-                  <div
+                  <Card
                     key={room.id}
-                    className="bg-black/30 p-4 rounded-lg border border-gray-600 hover:border-blue-500 transition-colors"
+                    variant="elevated"
+                    padding="md"
+                    className="hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300 cursor-pointer group"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-white">{room.name}</h4>
-                        {room.isPrivate && <span className="text-yellow-400">🔒</span>}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 bg-blue-600/20 rounded-lg">
+                          <Users className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-white group-hover:text-blue-300 transition-colors">
+                              {room.name}
+                            </h4>
+                            {room.isPrivate && (
+                              <Badge variant="warning" size="sm">
+                                <Lock className="w-3 h-3" />
+                                Private
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 flex items-center gap-1 mt-1">
+                            <Clock className="w-3 h-3" />
+                            {getTimeAgo(room.created)}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-sm text-gray-400">{getTimeAgo(room.created)}</span>
+                      <Badge 
+                        variant={room.players >= room.maxPlayers ? "error" : "success"}
+                        size="sm"
+                      >
+                        {room.players}/{room.maxPlayers}
+                      </Badge>
                     </div>
                     
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="text-sm text-gray-300">
-                        <div>ホスト: {room.hostName}</div>
-                        <div>モード: {room.gameMode}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`text-sm font-semibold ${
-                          room.players >= room.maxPlayers ? 'text-red-400' : 'text-green-400'
-                        }`}>
-                          {room.players}/{room.maxPlayers}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-sm text-gray-300 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-3 h-3 text-gray-400" />
+                          <span>ホスト: {room.hostName}</span>
                         </div>
-                        <div className="text-xs text-gray-400">プレイヤー</div>
+                        <div className="flex items-center gap-2">
+                          <Gamepad2 className="w-3 h-3 text-gray-400" />
+                          <span>モード: {room.gameMode}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <button
+                    <Button
+                      variant={isSpectator ? "secondary" : "primary"}
+                      size="md"
+                      fullWidth
+                      icon={isSpectator ? Eye : Play}
                       onClick={() => joinRoom(room)}
                       disabled={!playerName.trim() || (!isSpectator && room.players >= room.maxPlayers)}
-                      className={`w-full py-2 rounded font-semibold transition-all ${
-                        !playerName.trim() || (!isSpectator && room.players >= room.maxPlayers)
-                          ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                          : isSpectator
-                          ? 'bg-purple-600 text-white hover:bg-purple-700'
-                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                      }`}
                     >
                       {(!isSpectator && room.players >= room.maxPlayers) 
                         ? '満室' 
@@ -330,17 +386,24 @@ const JoinRoomPage: React.FC = () => {
                         ? '観戦参加' 
                         : '参加'
                       }
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 ))}
 
                 {filteredRooms.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    {searchQuery ? '検索結果が見つかりません' : '現在参加可能なルームがありません'}
-                  </div>
+                  <Card variant="outline" padding="lg" className="text-center">
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <div className="p-3 bg-gray-600/20 rounded-full">
+                        <Search className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-gray-400">
+                        {searchQuery ? '検索結果が見つかりません' : '現在参加可能なルームがありません'}
+                      </p>
+                    </div>
+                  </Card>
                 )}
               </div>
-            </div>
+            </Card>
           </div>
         </div>
       </div>
