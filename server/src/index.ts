@@ -265,6 +265,34 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
+// Get or create user by name (for simple authentication)
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { playerName } = req.body;
+    
+    if (!playerName) {
+      res.status(400).json({ error: 'Player name is required' });
+      return;
+    }
+    
+    let user = await dbService.getUserByName(playerName);
+    
+    if (!user) {
+      user = await dbService.createUser(playerName);
+    }
+    
+    res.json({ 
+      userId: user.id, 
+      name: user.name,
+      rating: user.rating,
+      gamesPlayed: user.gamesPlayed,
+      gamesWon: user.gamesWon
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
 app.get('/api/users/:userId/stats', async (req, res) => {
   try {
     const stats = await dbService.getUserStats(req.params.userId);
@@ -348,8 +376,35 @@ app.get('/api/stats/daily', async (req, res) => {
 // Leaderboard endpoint
 app.get('/api/leaderboard', async (req, res) => {
   try {
-    // TODO: レーティング上位プレイヤーのリストを返す実装
-    res.json([]);
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    // レーティング上位プレイヤーを取得
+    const leaderboard = await dbService.prisma.user.findMany({
+      where: {
+        gamesPlayed: {
+          gte: 5 // 最低5ゲームプレイした人のみ
+        }
+      },
+      orderBy: {
+        rating: 'desc'
+      },
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        rating: true,
+        gamesPlayed: true,
+        gamesWon: true
+      }
+    });
+    
+    // 勝率を計算
+    const leaderboardWithWinRate = leaderboard.map(player => ({
+      ...player,
+      winRate: player.gamesPlayed > 0 ? player.gamesWon / player.gamesPlayed : 0
+    }));
+    
+    res.json(leaderboardWithWinRate);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }

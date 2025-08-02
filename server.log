@@ -201,3 +201,49 @@
 [1] 20:12:50 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
 [1] 20:13:01 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
 [1] 20:13:17 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[0] Room created: KLEY4E (3f5b87cd-56b8-4461-93a9-10fc35911fe2)
+[1] 2:01:19 [vite] ws proxy socket error:
+[1] Error: write EPIPE
+[1]     at afterWriteDispatched (node:internal/stream_base_commons:159:15)
+[1]     at writeGeneric (node:internal/stream_base_commons:150:3)
+[1]     at Socket._writeGeneric (node:net:971:11)
+[1]     at Socket._write (node:net:983:8)
+[1]     at writeOrBuffer (node:internal/streams/writable:572:12)
+[1]     at _write (node:internal/streams/writable:501:10)
+[1]     at Writable.write (node:internal/streams/writable:510:10)
+[1]     at Socket.ondata (node:internal/streams/readable:1009:22)
+[1]     at Socket.emit (node:events:518:28)
+[1]     at addChunk (node:internal/streams/readable:561:12)
+[1]     at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+[1]     at Readable.push (node:internal/streams/readable:392:5)
+[1]     at TCP.onStreamRead (node:internal/stream_base_commons:189:23)
+[0] Client connected: QXvrhEah_Nfna9UAAAAC
+[0] Client disconnected: QXvrhEah_Nfna9UAAAAC
+[0] Room created: MMUK92 (c33beaf8-87c7-4db4-a6fe-601d5ff28560)
+[0] Client connected: 6HGA7Dd-bSGMBB59AAAE
+[0] Client disconnected: 6HGA7Dd-bSGMBB59AAAE
+[1] 2:02:10 [vite] hmr update /src/App.tsx, /src/index.css
+[0] Room created: DOYYKZ (0c359b73-f8b9-4a6c-aac4-6554ee2d1900)
+[0] Client connected: cUXS_rxi5MEzezHBAAAG
+[1] 2:02:18 [vite] hmr update /src/App.tsx, /src/index.css
+[0] 2:02:35 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: WevJea-cK4EirHphAAAB
+[0] 2:02:45 [tsx] change in ./src/database/DatabaseService.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: H9gp7en8Da2c_QHIAAAB
+[0] 2:02:56 [tsx] change in ./src/index.ts Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Client connected: 9ghRMQjfcV59zxU6AAAB
+[1] 2:03:03 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:11 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:11 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:21 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[0] Client disconnected: 9ghRMQjfcV59zxU6AAAB
+[1] 2:03:29 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:41 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:41 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css
+[1] 2:03:50 [vite] hmr update /src/pages/StatsPage.tsx, /src/index.css

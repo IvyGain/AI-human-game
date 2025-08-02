@@ -8,6 +8,8 @@ import CreateRoomPage from './pages/CreateRoomPage';
 import WaitingRoomPage from './pages/WaitingRoomPage';
 import QuickMatchPage from './pages/QuickMatchPage';
 import JoinRoomPage from './pages/JoinRoomPage';
+import StatsPage from './pages/StatsPage';
+import ReplayPage from './pages/ReplayPage';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ function App() {
             <Route path="/create-room" element={<CreateRoomPage />} />
             <Route path="/join-room" element={<JoinRoomPage />} />
             <Route path="/waiting-room" element={<WaitingRoomPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/replay/:gameId" element={<ReplayPage />} />
             <Route path="/game" element={<GamePage />} />
             <Route path="/game/:gameId" element={<GamePage />} />
           </Routes>

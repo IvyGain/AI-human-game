@@ -2,7 +2,7 @@ import { PrismaClient, User, Game, GameParticipation, ChatMessage, PlayerStats }
 import { GameState, Player, RoleName, Faction } from '@project-jin/shared';
 
 export class DatabaseService {
-  private prisma: PrismaClient;
+  public prisma: PrismaClient;
 
   constructor() {
     this.prisma = new PrismaClient();
