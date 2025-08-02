@@ -397,3 +397,35 @@
 [1]     at TCP.onStreamRead (node:internal/stream_base_commons:189:23)
 [0] Client connected: 8yewKvydEBg-OghAAAAM
 [0] Client disconnected: 8yewKvydEBg-OghAAAAM
+[0] 2:27:49 [tsx] change in ./../shared/dist/index.js Restarting...
+[0] cServer running on port 8080
+[0] Database connected successfully
+[0] Room created: 3TCRK3 (48292ca6-6763-4fa2-bbb3-f8d4d819cd72)
+[0] Client connected: -i4bV7ulbb0cSLXZAAAC
+[0] ルーム参加リクエスト - コード: 3TCRK3, プレイヤー名: a, 観戦者: false
+[0] Host a reconnected to room 3TCRK3 with socketId -i4bV7ulbb0cSLXZAAAC
+[0] ルーム参加成功 - roomId: 48292ca6-6763-4fa2-bbb3-f8d4d819cd72, playerId: a8263b1c-5294-4bad-bc24-ea56e5934da6, isSpectator: false
+[0] Player a joined room 3TCRK3 via WebSocket
+[1] 2:30:06 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 2:30:30 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
+[1] 3:16:03 [vite] page reload index.html
+[0] Client disconnected: -i4bV7ulbb0cSLXZAAAC
+[0] Player a left room 3TCRK3
+[0] Room 3TCRK3 deleted (empty)
+[0] Client connected: dlrUaVPCb9Ui_X-eAAAF
+[0] ルーム参加リクエスト - コード: 3TCRK3, プレイヤー名: a, 観戦者: false
+[0] ルーム参加エラー: Error: ルームが見つかりません
+[0]     at RoomManager.joinRoomByCode (/Users/mashimaro/AI-human-game/server/src/room/RoomManager.ts:107:13)
+[0]     at SocketHandler.handleJoinRoom (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:380:37)
+[0]     at Socket.<anonymous> (/Users/mashimaro/AI-human-game/server/src/websocket/SocketHandler.ts:68:14)
+[0]     at Socket.emit (node:events:518:28)
+[0]     at Socket.emitUntyped (/Users/mashimaro/AI-human-game/node_modules/socket.io/dist/typed-events.js:69:22)
+[0]     at /Users/mashimaro/AI-human-game/node_modules/socket.io/dist/socket.js:697:39
+[0]     at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+[0] Client disconnected: dlrUaVPCb9Ui_X-eAAAF
+[1] 3:16:36 [vite] hmr update /src/App.tsx, /src/index.css
+[1] 3:16:50 [vite] hmr update /src/App.tsx, /src/index.css
+[1] 3:17:28 [vite] hmr update /src/index.css, /src/pages/GamePage.tsx, /src/components/GameControls.tsx, /src/components/ChatBox.tsx, /src/pages/WaitingRoomPage.tsx
+[1] 3:18:39 [vite] hmr update /src/App.tsx, /src/index.css
+[1] 3:18:54 [vite] hmr update /src/App.tsx, /src/index.css
+[1] 3:19:42 [vite] hmr update /src/index.css

@@ -3,8 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Project JIN" />
+    <meta name="theme-color" content="#111827" />
+    <meta name="msapplication-TileColor" content="#111827" />
+    <meta name="format-detection" content="telephone=no" />
     <title>Project JIN - AI人狼ゲーム</title>
+    
+    <!-- iOS Safari specific styles -->
+    <style>
+      * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -webkit-text-size-adjust: 100%;
+      }
+      
+      body {
+        position: fixed;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      #root {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

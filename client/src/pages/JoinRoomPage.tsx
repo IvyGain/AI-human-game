@@ -29,7 +29,12 @@ const JoinRoomPage: React.FC = () => {
       const response = await fetch('/api/rooms/public');
       if (response.ok) {
         const { rooms } = await response.json();
-        setAvailableRooms(rooms);
+        // 日付文字列をDateオブジェクトに変換
+        const roomsWithDates = rooms.map((room: any) => ({
+          ...room,
+          created: new Date(room.created)
+        }));
+        setAvailableRooms(roomsWithDates);
       } else {
         console.error('Failed to fetch public rooms');
       }
@@ -152,12 +157,21 @@ const JoinRoomPage: React.FC = () => {
     }
   };
 
-  const getTimeAgo = (date: Date) => {
-    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  const getTimeAgo = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    
+    // 無効な日付をチェック
+    if (isNaN(dateObj.getTime())) {
+      return '不明';
+    }
+    
+    const minutes = Math.floor((Date.now() - dateObj.getTime()) / 60000);
     if (minutes < 1) return '今';
     if (minutes < 60) return `${minutes}分前`;
     const hours = Math.floor(minutes / 60);
-    return `${hours}時間前`;
+    if (hours < 24) return `${hours}時間前`;
+    const days = Math.floor(hours / 24);
+    return `${days}日前`;
   };
 
   return (

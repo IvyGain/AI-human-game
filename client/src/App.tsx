@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HomePage } from './pages/HomePage';
@@ -10,30 +11,52 @@ import QuickMatchPage from './pages/QuickMatchPage';
 import JoinRoomPage from './pages/JoinRoomPage';
 import StatsPage from './pages/StatsPage';
 import ReplayPage from './pages/ReplayPage';
+import ErrorBoundary from './utils/ErrorBoundary';
+import ConnectionMonitor from './utils/ConnectionMonitor';
+import { initializeIOSCompatibility } from './utils/iOSCompatibility';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function App() {
+  useEffect(() => {
+    // iOS互換性機能を初期化
+    initializeIOSCompatibility();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <div className="min-h-screen bg-gray-900 text-white">
-          <Routes>
-            <Route path="/" element={<MainMenuPage />} />
-            <Route path="/old-home" element={<HomePage />} />
-            <Route path="/tutorial" element={<TutorialPage />} />
-            <Route path="/quick-match" element={<QuickMatchPage />} />
-            <Route path="/create-room" element={<CreateRoomPage />} />
-            <Route path="/join-room" element={<JoinRoomPage />} />
-            <Route path="/waiting-room" element={<WaitingRoomPage />} />
-            <Route path="/stats" element={<StatsPage />} />
-            <Route path="/replay/:gameId" element={<ReplayPage />} />
-            <Route path="/game" element={<GamePage />} />
-            <Route path="/game/:gameId" element={<GamePage />} />
-          </Routes>
-        </div>
-      </Router>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <div className="min-h-screen bg-gray-900 text-white touch-manipulation">
+            <ConnectionMonitor />
+            <Routes>
+              <Route path="/" element={<ErrorBoundary><MainMenuPage /></ErrorBoundary>} />
+              <Route path="/old-home" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
+              <Route path="/tutorial" element={<ErrorBoundary><TutorialPage /></ErrorBoundary>} />
+              <Route path="/quick-match" element={<ErrorBoundary><QuickMatchPage /></ErrorBoundary>} />
+              <Route path="/create-room" element={<ErrorBoundary><CreateRoomPage /></ErrorBoundary>} />
+              <Route path="/join-room" element={<ErrorBoundary><JoinRoomPage /></ErrorBoundary>} />
+              <Route path="/waiting-room" element={<ErrorBoundary><WaitingRoomPage /></ErrorBoundary>} />
+              <Route path="/stats" element={<ErrorBoundary><StatsPage /></ErrorBoundary>} />
+              <Route path="/replay/:gameId" element={<ErrorBoundary><ReplayPage /></ErrorBoundary>} />
+              <Route path="/game" element={<ErrorBoundary><GamePage /></ErrorBoundary>} />
+              <Route path="/game/:gameId" element={<ErrorBoundary><GamePage /></ErrorBoundary>} />
+            </Routes>
+          </div>
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
