@@ -441,3 +441,12 @@
 [1] 6:57:24 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
 [1] 6:59:13 [vite] hmr update /src/pages/JoinRoomPage.tsx, /src/index.css
 [1] 7:00:35 [vite] hmr update /src/pages/CreateRoomPage.tsx, /src/index.css
+[1] 17:59:08 [vite] page reload public/offline.html
+[1] 17:59:08 [vite] page reload public/offline.html
+[1] 18:05:51 [vite] page reload index.html
+[1] 18:06:45 [vite] page reload src/main.tsx
+[1] 18:06:56 [vite] vite.config.ts changed, restarting server...
+[1] 18:06:56 [vite] server restarted.
+[1] 
+[1]   ➜  Local:   http://localhost:3001/
+[1]   ➜  Network: http://192.168.1.2:3001/

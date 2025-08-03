@@ -13,6 +13,7 @@ import StatsPage from './pages/StatsPage';
 import ReplayPage from './pages/ReplayPage';
 import ErrorBoundary from './utils/ErrorBoundary';
 import ConnectionMonitor from './utils/ConnectionMonitor';
+import PWAInstallButton from './components/PWAInstallButton';
 import { initializeIOSCompatibility } from './utils/iOSCompatibility';
 
 const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ function App() {
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <div className="min-h-screen bg-gray-900 text-white touch-manipulation">
             <ConnectionMonitor />
+            <PWAInstallButton />
             <Routes>
               <Route path="/" element={<ErrorBoundary><MainMenuPage /></ErrorBoundary>} />
               <Route path="/old-home" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
